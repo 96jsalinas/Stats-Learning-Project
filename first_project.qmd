@@ -1,0 +1,15 @@
+---
+title: "First assignment"
+format:
+    html:
+        code-fold: true
+jupyter: python3
+---
+We load the data:
+```{python}
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00350/default%20of%20credit%20card%20clients.xls"
+df = pd.read_excel(url, header=1)
+```

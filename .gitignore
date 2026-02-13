@@ -1,0 +1,34 @@
+# --- Python & Virtual Environments ---
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+env/
+venv/
+
+# --- Data Files (Local Cache) ---
+# Ignore the specific file you mentioned
+default_credit_card_clients.xlsx
+# Ignore other common data formats just in case
+*.csv
+*.xls
+*.xlsx
+
+# --- Quarto & RStudio ---
+# This ignores the "temp" folder full of JS/CSS libraries seen in your screenshot
+*_files/
+*_cache/
+
+# Ignore the internal .quarto folder
+.quarto/
+
+# Ignore generated output (only track the source .qmd files)
+# If you WANT to share the HTML on GitHub, remove the *.html line below
+*.html
+*.pdf
+*.docx
+
+# --- OS & Editor Configs ---
+.DS_Store
+.vscode/
+*.swp
