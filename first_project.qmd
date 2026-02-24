@@ -718,9 +718,57 @@ plt.show()
 
 **Interpretation:** Lowering the threshold from 0.50 to the grid-optimal **0.200** (close to the theoretical $p^* = 0.167$) raises default recall from **27 % to 63 %** and F1 from 0.38 to **0.50**, at the cost of dropping overall accuracy from 81 % to 72 % and precision on defaults from 0.65 to 0.42. The expected cost falls from **0.840 to 0.599** because each missed defaulter carries a 5× penalty. The grid optimum sits slightly above the theoretical threshold, reflecting the fact that the LDA probabilities are not perfectly calibrated; in practice the two values are close enough that the theoretical formula provides a reliable starting point.
 
----
+### ROC-based threshold: Youden's J statistic
 
-## 7.4 Solution 2: Adjusted Class Prior (LDA)
+A second principled approach to threshold selection uses the ROC curve directly. **Youden's J statistic** maximises the sum of sensitivity and specificity:
+
+$$J = \text{Sensitivity} + \text{Specificity} - 1 = \text{TPR} - \text{FPR}$$
+
+This is a symmetrical criterion that treats both error types equally, in contrast to the cost-matrix threshold which explicitly weights false negatives 5× more. The optimal point is the threshold at which the ROC curve is furthest from the random-classifier diagonal.
+
+```{python}
+from sklearn.metrics import roc_curve
+
+fpr, tpr, roc_thresholds = roc_curve(y_test, y_prob_lda)
+youden_j    = tpr - fpr
+best_idx    = np.argmax(youden_j)
+youden_t    = roc_thresholds[best_idx]
+
+print(f"Youden's J optimal threshold : {youden_t:.4f}")
+print(f"  Sensitivity (Recall)       : {tpr[best_idx]:.4f}")
+print(f"  Specificity (1 - FPR)      : {1 - fpr[best_idx]:.4f}")
+print(f"  Youden's J                 : {youden_j[best_idx]:.4f}")
+
+y_pred_lda_youden = (y_prob_lda >= youden_t).astype(int)
+print(f"\n=== LDA at Youden threshold = {youden_t:.4f} ===")
+print(classification_report(y_test, y_pred_lda_youden,
+                             target_names=['No Default', 'Default']))
+print(f"Expected cost : {expected_cost(y_test, y_pred_lda_youden, C):.4f}")
+```
+
+```{python}
+fig, axes = plt.subplots(1, 3, figsize=(18, 4))
+
+ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_lda),
+                       display_labels=['No Default', 'Default']).plot(
+    ax=axes[0], colorbar=False)
+axes[0].set_title('LDA: Default threshold (0.50)')
+
+ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_lda_tuned),
+                       display_labels=['No Default', 'Default']).plot(
+    ax=axes[1], colorbar=False)
+axes[1].set_title(f'LDA: Cost-optimal ({opt_t:.3f})')
+
+ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_lda_youden),
+                       display_labels=['No Default', 'Default']).plot(
+    ax=axes[2], colorbar=False)
+axes[2].set_title(f"LDA: Youden's J ({youden_t:.3f})")
+
+plt.tight_layout()
+plt.show()
+```
+
+**Interpretation:** Youden's J selects a threshold of **0.2244** (sensitivity 0.60, specificity 0.80, J = 0.398), yielding recall 60 %, F1 **0.52**, accuracy 75 %, and expected cost **0.600**. The cost-matrix threshold (0.200) lands lower because it explicitly penalises false negatives more, pushing the boundary further toward flagging borderline clients as defaulters to avoid the 5× FN penalty. In this dataset the two thresholds sit close together (0.200 vs 0.224) and produce nearly identical expected costs (0.599 vs 0.600), but in settings with more extreme cost ratios or better-calibrated probabilities, the gap would widen. Youden's J is the right default when costs are unknown or symmetric; the cost-matrix threshold is strictly better here because it encodes the business loss function directly.
 
 A cleaner, model-level intervention: refit LDA with balanced priors $\pi_0 = \pi_1 = 0.5$ instead of the empirical 78 / 22 split. This shifts the decision boundary toward the majority class, raising default recall without touching the threshold.
 
@@ -771,6 +819,7 @@ Data-level strategies modify the training set rather than the model. We compare 
 
 ```{python}
 from sklearn.utils import resample
+from imblearn.over_sampling import SMOTE
 
 # --- Random undersampling ---
 X_tr_np = X_train_scaled.values
@@ -795,12 +844,18 @@ X_min_up, y_min_up = resample(
 X_up = np.vstack([X_tr_np[mask_maj], X_min_up])
 y_up = np.concatenate([y_tr_np[mask_maj], y_min_up])
 
+# --- SMOTE ---
+smote = SMOTE(random_state=42)
+X_smote, y_smote = smote.fit_resample(X_tr_np, y_tr_np)
+
 print(f"Original training set     : {y_tr_np.shape[0]} rows  "
       f"(default rate = {y_tr_np.mean():.3f})")
 print(f"Undersampled training set : {y_down.shape[0]} rows  "
       f"(default rate = {y_down.mean():.3f})")
 print(f"Oversampled training set  : {y_up.shape[0]} rows   "
       f"(default rate = {y_up.mean():.3f})")
+print(f"SMOTE training set        : {y_smote.shape[0]} rows   "
+      f"(default rate = {y_smote.mean():.3f})")
 ```
 
 ```{python}
@@ -814,13 +869,17 @@ lda_down.fit(X_down, y_down)
 lda_up = LinearDiscriminantAnalysis()
 lda_up.fit(X_up, y_up)
 
+lda_smote = LinearDiscriminantAnalysis()
+lda_smote.fit(X_smote, y_smote)
+
 X_te_np = X_test_scaled.values
 y_te_np = y_test.values
 
 resample_rows = []
 for name, model in [('Original (no resampling)', lda_orig),
                      ('Random undersampling',     lda_down),
-                     ('Random oversampling',      lda_up)]:
+                     ('Random oversampling',      lda_up),
+                     ('SMOTE',                    lda_smote)]:
     prob = model.predict_proba(X_te_np)[:, 1]
     yp_50  = (prob >= 0.50).astype(int)
     yp_opt = (prob >= opt_t).astype(int)
@@ -842,13 +901,14 @@ display(resample_df)
 ### Confusion matrices at threshold 0.5
 
 ```{python}
-fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+fig, axes = plt.subplots(1, 4, figsize=(20, 4))
 labels = ['No Default', 'Default']
 
 for ax, (name, model) in zip(axes, [
         ('Original',     lda_orig),
         ('Undersampled', lda_down),
-        ('Oversampled',  lda_up)]):
+        ('Oversampled',  lda_up),
+        ('SMOTE',        lda_smote)]):
     yp = model.predict(X_te_np)
     ConfusionMatrixDisplay(confusion_matrix(y_te_np, yp),
                            display_labels=labels).plot(ax=ax, colorbar=False)
@@ -862,7 +922,7 @@ plt.show()
 
 * **Undersampling** reduces the training set from 21 000 to **9 290 rows** (50/50 balance by discarding majority-class observations). At threshold 0.5 it more than doubles default recall (27 % → **61 %**) and cuts expected cost from 0.840 to **0.613**. However, at the cost-optimal threshold 0.20 it pushes recall to 98 % with a precision collapse to 0.19, raising expected cost back to 0.732.
 * **Oversampling** repeats minority-class rows to reach **32 710 training rows** (50/50). Results at threshold 0.5 are nearly identical to undersampling (recall 61 %, expected cost 0.610), confirming both strategies impose a similar effective prior shift. Oversampling preserves all original majority-class information, giving it a marginally higher AUC (0.741 vs 0.742) but no practical difference at this scale.
-* Both resampling strategies improve expected cost at threshold 0.5 over the imbalanced baseline. When combined with the cost-optimal threshold (0.20), however, neither beats plain LDA with threshold tuning or balanced priors, so the extreme recall gain (∼98 %) destroys precision and inflates cost.
+* **SMOTE** (Synthetic Minority Over-sampling Technique) generates new synthetic minority-class observations by interpolating between existing ones in feature space, rather than simply duplicating rows. It produces the same 32 710-row balanced training set as oversampling. At threshold 0.5 the results are nearly identical to plain oversampling (recall **61 %**, F1 **0.499**, expected cost **0.616**), with SMOTE marginally worse, likely because LDA's linear boundary cannot exploit the smoother minority-class region that SMOTE creates. The benefit of SMOTE is more pronounced for non-linear models. At the cost-optimal threshold (0.20) it similarly overshoots to around 98 % recall with a precision collapse (expected cost 0.727).
 
 ---
 
@@ -874,10 +934,13 @@ all_rows = []
 configs = [
     ('LDA: default threshold (0.50)',       y_pred_lda,        y_prob_lda),
     (f'LDA: cost threshold ({opt_t:.2f})',  y_pred_lda_tuned,  y_prob_lda),
-    ('LDA: balanced priors (0.5/0.5)',      lda_bal.predict(X_test_scaled), 
+    ("LDA: Youden's J threshold",           y_pred_lda_youden, y_prob_lda),
+    ('LDA: balanced priors (0.5/0.5)',      lda_bal.predict(X_test_scaled),
                                               lda_bal.predict_proba(X_test_scaled)[:, 1]),
     ('LDA: oversample train',               (lda_up.predict_proba(X_te_np)[:, 1] >= 0.5).astype(int),
                                               lda_up.predict_proba(X_te_np)[:, 1]),
+    ('LDA: SMOTE train',                    (lda_smote.predict_proba(X_te_np)[:, 1] >= 0.5).astype(int),
+                                              lda_smote.predict_proba(X_te_np)[:, 1]),
     ('GNB: default threshold (0.50)',       y_pred_gnb,        y_prob_gnb),
     (f'GNB: cost threshold ({opt_t:.2f})',  (y_prob_gnb >= opt_t).astype(int), y_prob_gnb),
 ]
@@ -900,8 +963,10 @@ display(final_df)
 ### Key takeaways
 
 * **Threshold tuning is the highest-leverage, zero-retraining intervention**: shifting LDA's threshold from 0.50 to **0.200** (grid-optimal; theoretical $p^* = 0.167$) raises default recall from 27 % to **63 %**, F1 from 0.38 to **0.50**, and delivers the **lowest expected cost of 0.599** across all configurations tested.
-* **Balanced priors** are the best single model-level fix: one parameter change raises recall to **60 %** and F1 to **0.517** (the highest of any configuration) with expected cost of 0.601, which is essentially tied with threshold tuning, and more principled theoretically.
-* **Resampling at threshold 0.5** brings comparable gains to balanced priors (recall ~61 %, expected cost ~0.61), but combining resampling with the cost-optimal threshold backfires: the model overshoots to ∼98 % recall with precision of 0.19, worsening expected cost to 0.73.
-* **GNB with cost threshold (0.20)** achieves a recall of **59 %** and expected cost of **0.637**, but consistently behind the best LDA variants. GNB's miscalibrated probabilities make threshold selection less precise.
-* **ROC-AUC is invariant across all interventions** (all LDA variants: 0.740–0.741): every strategy here improves decision rules without changing the underlying ranking ability of the model.
-* The expected-cost framework makes the business trade-off explicit and portable. With a 5:1 FN/FP cost ratio the optimal threshold is 0.167; a bank with a different loss estimate simply updates $c_{FN}$ and recomputes $p^* = c_{FP}/(c_{FP}+c_{FN})$.
+* **Youden's J statistic** offers a symmetrical, ROC-curve-based alternative: it selects threshold **0.2244** (J = 0.398), maximising $\text{TPR} - \text{FPR}$ with sensitivity 0.60 and specificity 0.80. This yields recall 60 %, F1 **0.519**, and expected cost **0.600**, nearly indistinguishable from the cost-matrix threshold (0.200, cost 0.599) in this dataset. The two criteria converge here because the 5:1 cost ratio implies a relatively mild shift from 0.5; in scenarios with more extreme asymmetry (e.g. 20:1) the gap would widen substantially, and the cost-matrix threshold would be clearly preferable.
+* **Balanced priors** are the best single model-level fix: one parameter change raises recall to **60 %** and F1 to **0.517** (the highest of any configuration) with expected cost of 0.601, essentially tied with threshold tuning and more principled theoretically.
+* **SMOTE** produces the same 32 710-row balanced training set as random oversampling but fills the minority-class region with synthetic interpolated points rather than duplicates. At threshold 0.5 it achieves recall **61 %**, F1 **0.499**, expected cost **0.616**, marginally worse than plain oversampling (F1 0.507, cost 0.610) because LDA's linear boundary cannot exploit the smoother feature-space coverage. SMOTE's advantage becomes more pronounced with non-linear models.
+* **Resampling at threshold 0.5** brings comparable gains to balanced priors (recall around 61 %, expected cost around 0.61), but combining resampling with the cost-optimal threshold backfires: the model overshoots to around 98 % recall with precision of 0.19, worsening expected cost to 0.73.
+* **GNB with cost threshold (0.20)** achieves a recall of **59 %** and expected cost of **0.637**, consistently behind the best LDA variants. GNB's miscalibrated probabilities make threshold selection less precise.
+* **ROC-AUC is invariant across all interventions** (all LDA variants: 0.740–0.741): every strategy improves decision rules without changing the underlying ranking ability of the model.
+* The expected-cost framework is portable: with a 5:1 FN/FP ratio the optimal threshold is 0.167; a bank with a different loss estimate simply updates $c_{FN}$ and recomputes $p^* = c_{FP}/(c_{FP}+c_{FN})$.
