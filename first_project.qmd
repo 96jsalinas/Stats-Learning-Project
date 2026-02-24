@@ -1,15 +1,569 @@
 ---
-title: "First assignment"
+title: "Credit Card Default: EDA & Preprocessing"
 format:
     html:
         code-fold: true
+        toc: true
+        toc-depth: 3
 jupyter: python3
 ---
-We load the data:
+
+# Overview
+
+This report analyses the **UCI Default of Credit Card Clients** dataset (30 000 Taiwanese cardholders, 2005). The goal is to predict whether a client will default on their payment in October 2005. 
+
+---
+
+# 1. Load & Basic Cleaning
+
+We first load the dataset from a local cache (or download it if absent), drop the meaningless `ID` column, and rename every feature to a more readable snake-case convention. Two helper label columns (`edu_label`, `gender_label`) are created **for visualisation only** and will be dropped before modelling.
+
 ```{python}
+import os
 import pandas as pd
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00350/default%20of%20credit%20card%20clients.xls"
-df = pd.read_excel(url, header=1)
+from scipy.stats import skew
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+local_file = "default_credit_card_clients.xlsx"
+url = ("https://archive.ics.uci.edu/ml/machine-learning-databases"
+       "/00350/default%20of%20credit%20card%20clients.xls")
+
+if os.path.exists(local_file):
+    df = pd.read_excel(local_file)
+else:
+    df = pd.read_excel(url, header=1)
+    df.to_excel(local_file, index=False)
+
+rename_dict = {
+    'LIMIT_BAL': 'credit_limit', 'SEX': 'gender',
+    'EDUCATION': 'education', 'MARRIAGE': 'marital_status', 'AGE': 'age',
+    'PAY_0': 'status_sep', 'PAY_2': 'status_aug', 'PAY_3': 'status_jul',
+    'PAY_4': 'status_jun', 'PAY_5': 'status_may', 'PAY_6': 'status_apr',
+    'BILL_AMT1': 'bill_sep', 'BILL_AMT2': 'bill_aug', 'BILL_AMT3': 'bill_jul',
+    'BILL_AMT4': 'bill_jun', 'BILL_AMT5': 'bill_may', 'BILL_AMT6': 'bill_apr',
+    'PAY_AMT1': 'paid_sep', 'PAY_AMT2': 'paid_aug', 'PAY_AMT3': 'paid_jul',
+    'PAY_AMT4': 'paid_jun', 'PAY_AMT5': 'paid_may', 'PAY_AMT6': 'paid_apr',
+    'default payment next month': 'default'
+}
+df.rename(columns=rename_dict, inplace=True)
+if 'ID' in df.columns:
+    df.drop('ID', axis=1, inplace=True)
+
+# EDA-only label columns
+df['edu_label']    = df['education'].map({1: 'Grad', 2: 'Uni', 3: 'HS',
+                                           4: 'Other', 5: 'Other',
+                                           6: 'Other', 0: 'Other'})
+df['gender_label'] = df['gender'].map({1: 'Male', 2: 'Female'})
+
+print(f"Shape: {df.shape}")
+df.head(3)
 ```
+
+The dataset contains **30 000 rows** and **25 feature columns** after renaming. No structural issues (duplicate headers, merged cells) were found in the raw Excel file.
+
+---
+
+# 2. Data Integrity & Summary
+
+Before any modelling we perform a per-column audit covering: data type, count of missing values, mean, skewness and excess kurtosis.
+
+```{python}
+def academic_summary(df_in):
+    numeric_df = df_in.select_dtypes(include=[np.number])
+    summary = pd.DataFrame(index=numeric_df.columns)
+    summary['Type']     = numeric_df.dtypes
+    summary['Missing']  = numeric_df.isnull().sum()
+    summary['Mean']     = numeric_df.mean().round(2)
+    summary['Skewness'] = numeric_df.skew().round(2)
+    summary['Kurtosis'] = numeric_df.kurt().round(2)
+    return summary
+
+academic_summary(df)
+```
+
+**Key findings:**
+
+* **No missing values**: the dataset is complete, so no imputation is required.
+* **Monetary columns** (`bill_*`, `paid_*`, `credit_limit`) show strong positive skewness (typically > 2), indicating a long right tail consistent with a small number of very high-spending or high-limit clients. These columns will benefit from a log transform.
+* **Repayment status columns** (`status_*`) are encoded as integers (−2 to 8). They are ordinal, not continuous, and will be treated accordingly.
+* **Target (`default`)** is binary (0 / 1).
+
+---
+
+# 3. Visual EDA
+
+## 3.1 Univariate Analysis
+
+We inspect the distribution of the target variable, age, credit limit, and education level.
+
+```{python}
+fig, axes = plt.subplots(2, 2, figsize=(14, 9))
+
+sns.countplot(x='default', data=df, ax=axes[0, 0], palette='viridis')
+axes[0, 0].set_title('Target Balance (Default vs Non-Default)')
+axes[0, 0].set_xlabel('Default (0 = No, 1 = Yes)')
+
+sns.histplot(df['age'], bins=30, kde=True, ax=axes[0, 1], color='skyblue')
+axes[0, 1].set_title('Age Distribution')
+
+sns.histplot(df['credit_limit'], bins=30, kde=True, ax=axes[1, 0], color='salmon')
+axes[1, 0].set_title('Credit Limit Distribution')
+
+sns.countplot(x='edu_label', data=df, ax=axes[1, 1], palette='pastel',
+              order=['Grad', 'Uni', 'HS', 'Other'])
+axes[1, 1].set_title('Education Background')
+
+plt.tight_layout()
+plt.show()
+```
+
+**Interpretations:**
+
+* **Class imbalance**: roughly 78 % of clients did *not* default vs. 22 % who did. This imbalance is moderate, it will be accounted for in modelling but is not severe enough to require aggressive resampling on its own.
+* **Age**: ages range from 21 to 79, with a right-skewed distribution peaking around 26–30. Most clients are young adults, the long right tail means a handful of elderly clients hold much higher credit limits on average.
+* **Credit limit**: highly right-skewed: most clients cluster at lower limits (NT\$50 000–200 000) with a few outliers exceeding NT\$800 000. Log transformation will be applied before modelling.
+* **Education**: university graduates form the largest group, followed by graduate-school cardholders. The small "Other/Unknown" category (codes 0, 5, 6) will be collapsed into a single level.
+
+---
+
+## 3.2 Bivariate Analysis: Features vs Default
+
+```{python}
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+sns.boxplot(x='default', y='age', data=df, palette='Set2', ax=axes[0])
+axes[0].set_title('Age vs Default Status')
+axes[0].set_xlabel('Default (0 = No, 1 = Yes)')
+
+sns.boxplot(x='default', y='credit_limit', data=df, palette='Set2', ax=axes[1])
+axes[1].set_title('Credit Limit vs Default Status')
+axes[1].set_xlabel('Default (0 = No, 1 = Yes)')
+
+plt.tight_layout()
+plt.show()
+```
+
+**Interpretations:**
+
+* **Age**: the median age is very similar across both groups (around 35), suggesting age alone is a weak discriminator. The interquartile ranges overlap heavily, any predictive power age carries is likely captured through interaction with other variables.
+* **Credit limit**: defaulters tend to hold *lower* credit limits than non-defaulters. This makes economic sense: issuers typically grant higher limits to clients with a stronger repayment history. The difference is meaningful but distributions still overlap substantially, so credit limit will be one signal among many rather than a dominant predictor.
+
+---
+
+## 3.3 Multicollinearity Assessment
+
+High correlations between predictors can distort probabilistic models (e.g. Naïve Bayes) and inflate variance in regression-based approaches. We focus on the six monthly bill-amount columns.
+
+```{python}
+bill_cols = [c for c in df.columns if 'bill' in c]
+
+plt.figure(figsize=(9, 6))
+sns.heatmap(df[bill_cols].corr(), annot=True, cmap='viridis', fmt=".2f",
+            linewidths=0.5)
+plt.title("Pairwise Correlations: Monthly Bill Amounts")
+plt.tight_layout()
+plt.show()
+```
+
+**Interpretations:**
+
+* Adjacent months (e.g. `bill_sep` and `bill_aug`) show very high correlations (around 0.90–0.95), which is expected: a client's outstanding balance carries over month to month.
+* Correlations weaken with temporal distance : `bill_sep` and `bill_apr` are still moderately correlated (around 0.70), but less so than neighbouring months.
+* This near-multicollinearity is a known challenge for Naïve Bayes (which assumes feature independence) and for LDA (which inverts the covariance matrix). Dimensionality reduction or careful feature selection will be considered during modelling.
+
+---
+
+## 3.4 Temporal Trends: Bills vs Payments
+
+We plot the mean bill amount and mean payment amount across the six observation months (April–September 2005) to detect any macro-level trend.
+
+```{python}
+bill_cols_ordered = ['bill_apr', 'bill_may', 'bill_jun',
+                     'bill_jul', 'bill_aug', 'bill_sep']
+paid_cols_ordered = ['paid_apr', 'paid_may', 'paid_jun',
+                     'paid_jul', 'paid_aug', 'paid_sep']
+months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep']
+
+plt.figure(figsize=(10, 5))
+plt.plot(months, df[bill_cols_ordered].mean(), marker='o', label='Avg Bill Amount')
+plt.plot(months, df[paid_cols_ordered].mean(), marker='s', label='Avg Amount Paid')
+plt.title('Average Bill vs Payment Over Time (Apr–Sep 2005)')
+plt.ylabel('NT$ (average across all clients)')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+**Interpretations:**
+
+* Average outstanding bill amounts remain **consistently higher** than average payments across all months, confirming that most clients carry a revolving balance.
+* The gap between billed and paid amounts is relatively stable, suggesting no dramatic macro shock during this period.
+* Both series are fairly flat month-to-month, indicating the dataset captures a steady-state spending regime rather than a seasonal spike. The mismatch between billed and paid amounts is a structural feature that repayment-status variables will encode more directly.
+
+---
+
+# 4. Preprocessing Pipeline
+
+## 4.1 Variable Grouping
+
+We explicitly categorise every feature before applying transformations, ensuring the right treatment for each variable type.
+
+```{python}
+monetary_cols = [
+    'credit_limit', 'age',
+    'bill_sep', 'bill_aug', 'bill_jul', 'bill_jun', 'bill_may', 'bill_apr',
+    'paid_sep', 'paid_aug', 'paid_jul', 'paid_jun', 'paid_may', 'paid_apr'
+]
+ordinal_cols = [
+    'education',
+    'status_sep', 'status_aug', 'status_jul',
+    'status_jun', 'status_may', 'status_apr'
+]
+nominal_cols = ['gender', 'marital_status']
+
+print("Monetary (continuous / skewed):", monetary_cols)
+print("\nOrdinal (integer-coded):", ordinal_cols)
+print("\nNominal (to one-hot encode):", nominal_cols)
+```
+
+---
+
+## 4.2 Cleaning & Encoding
+
+Undocumented category codes (0, 5, 6 in `education`; 0 in `marital_status`) are collapsed into the existing "Other" category. Nominal variables are one-hot encoded (dropping the first level to avoid perfect multicollinearity).
+
+```{python}
+df['education']      = df['education'].replace([0, 5, 6], 4)
+df['marital_status'] = df['marital_status'].replace(0, 3)
+
+df_encoded = pd.get_dummies(df, columns=nominal_cols, drop_first=True)
+X = df_encoded.drop(columns=['default', 'edu_label', 'gender_label'], errors='ignore')
+y = df_encoded['default']
+
+print(f"Feature matrix shape: {X.shape}")
+print("Columns:", list(X.columns))
+```
+
+---
+
+## 4.3 Train / Test Split
+
+A stratified 70 / 30 split preserves the original class ratio in both subsets, preventing optimistic evaluation bias from accidental over-representation of non-defaults in the test set.
+
+```{python}
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42, stratify=y
+)
+
+print(f"Training set : {X_train.shape[0]} rows  "
+      f"(default rate = {y_train.mean():.3f})")
+print(f"Test set     : {X_test.shape[0]} rows  "
+      f"(default rate = {y_test.mean():.3f})")
+```
+
+The near-identical default rates in both splits confirm that stratification worked correctly.
+
+---
+
+## 4.4 Selective Log Transformation
+
+To reduce skewness in monetary columns we apply **log1p** (i.e. log(1 + x)) but only to columns whose absolute skewness on the training set exceeds a threshold of 0.75. This threshold-based approach avoids unnecessarily transforming variables that are already approximately symmetric, and the threshold decision is made on training data only to prevent data leakage.
+
+```{python}
+SKEW_THRESHOLD = 0.75
+logged_cols = []
+train_skewness_before = X_train[monetary_cols].skew()
+
+for col in monetary_cols:
+    if abs(train_skewness_before[col]) > SKEW_THRESHOLD:
+        X_train[col] = np.log1p(X_train[col].clip(lower=0))
+        X_test[col]  = np.log1p(X_test[col].clip(lower=0))
+        logged_cols.append(col)
+
+print(f"Columns log-transformed ({len(logged_cols)}): {logged_cols}")
+```
+
+---
+
+## 4.5 Standardisation
+
+Finally, all features are standardised to zero mean and unit variance using `StandardScaler` fitted **exclusively on the training set**. The same parameters are then applied to the test set, again avoiding leakage.
+
+```{python}
+final_cols = (monetary_cols + ordinal_cols +
+              [c for c in X.columns if 'gender_' in c or 'marital_status_' in c])
+
+X_train = X_train[final_cols]
+X_test  = X_test[final_cols]
+
+scaler = StandardScaler()
+X_train_scaled = pd.DataFrame(scaler.fit_transform(X_train), columns=X_train.columns)
+X_test_scaled  = pd.DataFrame(scaler.transform(X_test),  columns=X_test.columns)
+
+print(f"Final feature count: {X_train_scaled.shape[1]}")
+print("Sample of scaled training data:")
+X_train_scaled.head(3)
+```
+
+Standardisation is essential for distance-based and probabilistic models (LDA, Naïve Bayes, logistic regression with regularisation) that are sensitive to feature scale.
+
+---
+
+# 5. Preprocessing Verification
+
+We confirm that log transformation meaningfully reduced skewness in the targeted columns.
+
+```{python}
+if logged_cols:
+    comparison = pd.DataFrame({
+        'Skew Before': train_skewness_before[logged_cols].values,
+        'Skew After':  X_train[logged_cols].skew().values
+    }, index=logged_cols)
+    comparison['Reduction %'] = (
+        (comparison['Skew Before'].abs() - comparison['Skew After'].abs())
+        / comparison['Skew Before'].abs() * 100
+    ).round(1)
+    display(comparison.round(3))
+```
+
+**Interpretation:** For all transformed columns, absolute skewness dropped substantially (typically from > 2 to < 1), bringing the distributions much closer to symmetry. This will improve the Gaussian assumptions underlying LDA and Naïve Bayes and reduce the influence of outliers on distance-based models.
+
+---
+
+# 6. Discriminant & Probabilistic Classifiers
+
+## 6.1 Overview
+
+We evaluate three generative classifiers that share a common probabilistic framework: they all model $P(\mathbf{x} \mid y)$ and apply Bayes' theorem to obtain the posterior $P(y \mid \mathbf{x})$.
+
+| Model | Covariance structure | Decision boundary |
+|---|---|---|
+| **LDA** | Shared $\Sigma$ across classes | Linear |
+| **QDA** | Per-class $\Sigma_k$ | Quadratic |
+| **Gaussian Naïve Bayes** | Diagonal (feature independence) | Quadratic |
+
+```{python}
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import (
+    classification_report, confusion_matrix, roc_auc_score,
+    RocCurveDisplay, ConfusionMatrixDisplay
+)
+import warnings
+warnings.filterwarnings('ignore')
+
+# Reset indices so everything aligns cleanly
+X_train_scaled = X_train_scaled.reset_index(drop=True)
+X_test_scaled  = X_test_scaled.reset_index(drop=True)
+y_train = y_train.reset_index(drop=True)
+y_test  = y_test.reset_index(drop=True)
+```
+
+---
+
+## 6.2 Linear Discriminant Analysis (LDA)
+
+### Theory
+
+LDA assumes each class $k$ follows a multivariate Gaussian $\mathcal{N}(\boldsymbol{\mu}_k, \Sigma)$ with a **shared** covariance matrix $\Sigma$. This shared-covariance assumption makes the log-posterior ratio linear in $\mathbf{x}$, yielding linear decision boundaries. Parameters are estimated by maximum likelihood: class means $\hat{\boldsymbol{\mu}}_k$ and a pooled within-class scatter matrix.
+
+**Key assumptions:**
+
+* Features are Gaussian within each class.
+* All classes share the same covariance structure.
+
+### Fit & Evaluate
+
+```{python}
+lda = LinearDiscriminantAnalysis()
+lda.fit(X_train_scaled, y_train)
+
+y_pred_lda = lda.predict(X_test_scaled)
+y_prob_lda = lda.predict_proba(X_test_scaled)[:, 1]
+auc_lda    = roc_auc_score(y_test, y_prob_lda)
+
+print("=== LDA: Classification Report ===")
+print(classification_report(y_test, y_pred_lda, target_names=['No Default', 'Default']))
+print(f"ROC-AUC: {auc_lda:.4f}")
+```
+
+```{python}
+fig, axes = plt.subplots(1, 2, figsize=(13, 4))
+
+ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_lda),
+                       display_labels=['No Default', 'Default']).plot(ax=axes[0], colorbar=False)
+axes[0].set_title('LDA - Confusion Matrix')
+
+RocCurveDisplay.from_predictions(y_test, y_prob_lda, ax=axes[1],
+                                 name=f'LDA (AUC = {auc_lda:.3f})')
+axes[1].plot([0, 1], [0, 1], 'k--', lw=1)
+axes[1].set_title('LDA - ROC Curve')
+plt.tight_layout()
+plt.show()
+```
+
+### Interpretation
+
+* LDA achieves **81 % overall accuracy**, however recall on non-defaulters is 96 % while recall on defaulters is only **27 %**, meaning nearly three quarters of actual defaulters are missed.
+* The **ROC-AUC of 0.74** is the more meaningful summary: it confirms that LDA's linear projection captures genuine discriminative signal, ranking a randomly chosen defaulter above a randomly chosen non-defaulter 74 % of the time.
+* The precision / recall trade-off for the default class (precision 0.65, recall 0.27, F1 0.38) reflects the shared-covariance assumption pulling the decision boundary toward the majority class. Lowering the classification threshold from 0.5 would improve recall at the cost of precision.
+
+---
+
+## 6.3 Quadratic Discriminant Analysis (QDA)
+
+### Theory
+
+QDA relaxes LDA's shared-covariance assumption by estimating a **separate** covariance matrix $\Sigma_k$ for each class. The log-posterior then contains a quadratic term in $\mathbf{x}$, producing curved decision boundaries. This gives QDA more flexibility but at the cost of estimating many more parameters ($p(p+1)/2$ per class), which can hurt performance when $n$ is small or features are highly correlated.
+
+**Key assumptions:**
+
+* Features are Gaussian within each class.
+* Classes may have different covariance structures.
+
+### Fit & Evaluate
+
+```{python}
+qda = QuadraticDiscriminantAnalysis(reg_param=0.01)
+qda.fit(X_train_scaled, y_train)
+
+y_pred_qda = qda.predict(X_test_scaled)
+y_prob_qda = qda.predict_proba(X_test_scaled)[:, 1]
+auc_qda    = roc_auc_score(y_test, y_prob_qda)
+
+print("=== QDA: Classification Report ===")
+print(classification_report(y_test, y_pred_qda, target_names=['No Default', 'Default']))
+print(f"ROC-AUC: {auc_qda:.4f}")
+```
+
+> `reg_param=0.01` adds a small ridge to each class covariance matrix, stabilising inversion when some features are near-collinear (as seen in the bill-amount correlations from Section 3.3).
+
+```{python}
+fig, axes = plt.subplots(1, 2, figsize=(13, 4))
+
+ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_qda),
+                       display_labels=['No Default', 'Default']).plot(ax=axes[0], colorbar=False)
+axes[0].set_title('QDA: Confusion Matrix')
+
+RocCurveDisplay.from_predictions(y_test, y_prob_qda, ax=axes[1],
+                                 name=f'QDA (AUC = {auc_qda:.3f})')
+axes[1].plot([0, 1], [0, 1], 'k--', lw=1)
+axes[1].set_title('QDA: ROC Curve')
+plt.tight_layout()
+plt.show()
+```
+
+### Interpretation
+
+* QDA sacrifices overall accuracy (75 % vs LDA's 81 %) in exchange for much better balance on the default class: recall rises from 27 % (LDA) to **49 %**, and F1 improves from 0.38 to **0.47**. This reflects the quadratic boundary's ability to enclose the default cluster more tightly.
+* However, QDA's **ROC-AUC of 0.72 is the lowest of the three models**, below LDA (0.74) and Naïve Bayes (0.74). The multicollinearity in the bill columns (Section 3.3) makes per-class covariance estimation unreliable.
+* The two classes do appear to differ in their covariance structure (defaulters show more volatile spending), which is why QDA's recall gain over LDA is real, but the correlated features limit how much the extra flexibility can be exploited.
+
+---
+
+## 6.4 Gaussian Naïve Bayes
+
+### Theory
+
+Gaussian Naïve Bayes (GNB) takes the independence assumption to its extreme: given the class label, every feature is treated as **conditionally independent**, so the class-conditional density factorises as:
+
+$$P(\mathbf{x} \mid y = k) = \prod_{j=1}^{p} \mathcal{N}(x_j \mid \mu_{kj},\, \sigma_{kj}^2)$$
+
+This makes GNB equivalent to QDA with diagonal (per-class) covariance matrices. Parameter estimation is trivially fast and the model is robust to high dimensionality, but the independence assumption is strongly violated here (see the bill-amount correlations in Section 3).
+
+**Key assumptions:**
+
+* Features are conditionally independent given the class label.
+* Each feature is Gaussian within each class.
+
+### Fit & Evaluate
+
+```{python}
+gnb = GaussianNB()
+gnb.fit(X_train_scaled, y_train)
+
+y_pred_gnb = gnb.predict(X_test_scaled)
+y_prob_gnb = gnb.predict_proba(X_test_scaled)[:, 1]
+auc_gnb    = roc_auc_score(y_test, y_prob_gnb)
+
+print("=== Gaussian Naïve Bayes: Classification Report ===")
+print(classification_report(y_test, y_pred_gnb, target_names=['No Default', 'Default']))
+print(f"ROC-AUC: {auc_gnb:.4f}")
+```
+
+```{python}
+fig, axes = plt.subplots(1, 2, figsize=(13, 4))
+
+ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_gnb),
+                       display_labels=['No Default', 'Default']).plot(ax=axes[0], colorbar=False)
+axes[0].set_title('Naïve Bayes: Confusion Matrix')
+
+RocCurveDisplay.from_predictions(y_test, y_prob_gnb, ax=axes[1],
+                                 name=f'Naïve Bayes (AUC = {auc_gnb:.3f})')
+axes[1].plot([0, 1], [0, 1], 'k--', lw=1)
+axes[1].set_title('Naïve Bayes: ROC Curve')
+plt.tight_layout()
+plt.show()
+```
+
+### Interpretation
+
+* Despite the strongly violated independence assumption, GNB achieves a **ROC-AUC of 0.74**, matching LDA, this is probably because the ranking of predicted probabilities is still informative even when absolute probability values are miscalibrated.
+* GNB has the **highest recall on defaulters (51 %)** and a competitive F1 of 0.49, outperforming both LDA (F1 0.38) and QDA (F1 0.47) on the minority class at the cost of lower overall accuracy (76 %).
+* The precision on defaults is only 0.47 (vs LDA's 0.65), confirming the miscalibration: GNB flags more clients as risky than warranted.
+
+---
+
+## 6.5 Model Comparison
+
+### Combined ROC Curves
+
+```{python}
+fig, ax = plt.subplots(figsize=(8, 6))
+
+for name, probs in [('LDA', y_prob_lda), ('QDA', y_prob_qda), ('Naïve Bayes', y_prob_gnb)]:
+    RocCurveDisplay.from_predictions(y_test, probs, ax=ax,
+                                     name=f'{name} (AUC = {roc_auc_score(y_test, probs):.3f})')
+
+ax.plot([0, 1], [0, 1], 'k--', lw=1, label='Random classifier')
+ax.set_title('ROC Curves: LDA vs QDA vs Naïve Bayes')
+ax.legend(loc='lower right')
+plt.tight_layout()
+plt.show()
+```
+
+### Summary Table
+
+```{python}
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+rows = []
+for name, y_pred, y_prob in [
+    ('LDA',         y_pred_lda, y_prob_lda),
+    ('QDA',         y_pred_qda, y_prob_qda),
+    ('Naïve Bayes', y_pred_gnb, y_prob_gnb),
+]:
+    rows.append({
+        'Model':                  name,
+        'Accuracy':               accuracy_score(y_test, y_pred),
+        'Precision (Default)':    precision_score(y_test, y_pred),
+        'Recall (Default)':       recall_score(y_test, y_pred),
+        'F1 (Default)':           f1_score(y_test, y_pred),
+        'ROC-AUC':                roc_auc_score(y_test, y_prob),
+    })
+
+summary_df = pd.DataFrame(rows).set_index('Model').round(4)
+display(summary_df)
+```
+
+### Discussion
+
+* **LDA** achieves the highest overall accuracy (81 %) and highest ROC-AUC (0.74), making it the best ranking model. Its weakness is the very low recall on defaulters (27 %): it is a conservative model that only flags cases it is highly confident about, producing a precision of 0.65 on the default class.
+* **QDA** has the lowest accuracy (75 %) and lowest AUC (0.72), but nearly doubles LDA's recall on defaults (49 %). The extra covariance flexibility partially captures the different spending volatility between the two classes, though multicollinearity in the bill features caps the gains.
+* **Gaussian Naïve Bayes** strikes the best minority-class balance: highest default recall (51 %), best default F1 (0.49), and an AUC (0.74) that matches LDA — all despite the grossly violated independence assumption. It is the best choice when catching defaulters matters more than precision, provided the output probabilities are recalibrated before use.
+* The core issue of all three models is the **precision–recall trade-off on the minority class**, none reaches a default F1 above 0.49.
