@@ -1,0 +1,2574 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Credit Card Default: EDA &amp; Preprocessing</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="first_project_files/libs/clipboard/clipboard.min.js"></script>
+<script src="first_project_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="first_project_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="first_project_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="first_project_files/libs/quarto-html/popper.min.js"></script>
+<script src="first_project_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="first_project_files/libs/quarto-html/anchor.min.js"></script>
+<link href="first_project_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="first_project_files/libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="first_project_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="first_project_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="first_project_files/libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#load-basic-cleaning" id="toc-load-basic-cleaning" class="nav-link" data-scroll-target="#load-basic-cleaning">1. Load &amp; Basic Cleaning</a></li>
+  <li><a href="#data-integrity-summary" id="toc-data-integrity-summary" class="nav-link" data-scroll-target="#data-integrity-summary">2. Data Integrity &amp; Summary</a></li>
+  <li><a href="#visual-eda" id="toc-visual-eda" class="nav-link" data-scroll-target="#visual-eda">3. Visual EDA</a>
+  <ul class="collapse">
+  <li><a href="#univariate-analysis" id="toc-univariate-analysis" class="nav-link" data-scroll-target="#univariate-analysis">3.1 Univariate Analysis</a></li>
+  <li><a href="#bivariate-analysis-features-vs-default" id="toc-bivariate-analysis-features-vs-default" class="nav-link" data-scroll-target="#bivariate-analysis-features-vs-default">3.2 Bivariate Analysis: Features vs Default</a></li>
+  <li><a href="#multicollinearity-assessment" id="toc-multicollinearity-assessment" class="nav-link" data-scroll-target="#multicollinearity-assessment">3.3 Multicollinearity Assessment</a></li>
+  <li><a href="#temporal-trends-bills-vs-payments" id="toc-temporal-trends-bills-vs-payments" class="nav-link" data-scroll-target="#temporal-trends-bills-vs-payments">3.4 Temporal Trends: Bills vs Payments</a></li>
+  </ul></li>
+  <li><a href="#preprocessing-pipeline" id="toc-preprocessing-pipeline" class="nav-link" data-scroll-target="#preprocessing-pipeline">4. Preprocessing Pipeline</a>
+  <ul class="collapse">
+  <li><a href="#variable-grouping" id="toc-variable-grouping" class="nav-link" data-scroll-target="#variable-grouping">4.1 Variable Grouping</a></li>
+  <li><a href="#cleaning-encoding" id="toc-cleaning-encoding" class="nav-link" data-scroll-target="#cleaning-encoding">4.2 Cleaning &amp; Encoding</a></li>
+  <li><a href="#train-test-split" id="toc-train-test-split" class="nav-link" data-scroll-target="#train-test-split">4.3 Train / Test Split</a></li>
+  <li><a href="#selective-log-transformation" id="toc-selective-log-transformation" class="nav-link" data-scroll-target="#selective-log-transformation">4.4 Selective Log Transformation</a></li>
+  <li><a href="#standardisation" id="toc-standardisation" class="nav-link" data-scroll-target="#standardisation">4.5 Standardisation</a></li>
+  </ul></li>
+  <li><a href="#preprocessing-verification" id="toc-preprocessing-verification" class="nav-link" data-scroll-target="#preprocessing-verification">5. Preprocessing Verification</a></li>
+  <li><a href="#discriminant-probabilistic-classifiers" id="toc-discriminant-probabilistic-classifiers" class="nav-link" data-scroll-target="#discriminant-probabilistic-classifiers">6. Discriminant &amp; Probabilistic Classifiers</a>
+  <ul class="collapse">
+  <li><a href="#overview-1" id="toc-overview-1" class="nav-link" data-scroll-target="#overview-1">6.1 Overview</a></li>
+  <li><a href="#linear-discriminant-analysis-lda" id="toc-linear-discriminant-analysis-lda" class="nav-link" data-scroll-target="#linear-discriminant-analysis-lda">6.2 Linear Discriminant Analysis (LDA)</a>
+  <ul class="collapse">
+  <li><a href="#theory" id="toc-theory" class="nav-link" data-scroll-target="#theory">Theory</a></li>
+  <li><a href="#fit-evaluate" id="toc-fit-evaluate" class="nav-link" data-scroll-target="#fit-evaluate">Fit &amp; Evaluate</a></li>
+  <li><a href="#interpretation" id="toc-interpretation" class="nav-link" data-scroll-target="#interpretation">Interpretation</a></li>
+  </ul></li>
+  <li><a href="#quadratic-discriminant-analysis-qda" id="toc-quadratic-discriminant-analysis-qda" class="nav-link" data-scroll-target="#quadratic-discriminant-analysis-qda">6.3 Quadratic Discriminant Analysis (QDA)</a>
+  <ul class="collapse">
+  <li><a href="#theory-1" id="toc-theory-1" class="nav-link" data-scroll-target="#theory-1">Theory</a></li>
+  <li><a href="#fit-evaluate-1" id="toc-fit-evaluate-1" class="nav-link" data-scroll-target="#fit-evaluate-1">Fit &amp; Evaluate</a></li>
+  <li><a href="#interpretation-1" id="toc-interpretation-1" class="nav-link" data-scroll-target="#interpretation-1">Interpretation</a></li>
+  </ul></li>
+  <li><a href="#gaussian-naïve-bayes" id="toc-gaussian-naïve-bayes" class="nav-link" data-scroll-target="#gaussian-naïve-bayes">6.4 Gaussian Naïve Bayes</a>
+  <ul class="collapse">
+  <li><a href="#theory-2" id="toc-theory-2" class="nav-link" data-scroll-target="#theory-2">Theory</a></li>
+  <li><a href="#fit-evaluate-2" id="toc-fit-evaluate-2" class="nav-link" data-scroll-target="#fit-evaluate-2">Fit &amp; Evaluate</a></li>
+  <li><a href="#interpretation-2" id="toc-interpretation-2" class="nav-link" data-scroll-target="#interpretation-2">Interpretation</a></li>
+  </ul></li>
+  <li><a href="#model-comparison" id="toc-model-comparison" class="nav-link" data-scroll-target="#model-comparison">6.5 Model Comparison</a>
+  <ul class="collapse">
+  <li><a href="#combined-roc-curves" id="toc-combined-roc-curves" class="nav-link" data-scroll-target="#combined-roc-curves">Combined ROC Curves</a></li>
+  <li><a href="#summary-table" id="toc-summary-table" class="nav-link" data-scroll-target="#summary-table">Summary Table</a></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#cost-sensitive-learning" id="toc-cost-sensitive-learning" class="nav-link" data-scroll-target="#cost-sensitive-learning">7. Cost-Sensitive Learning</a>
+  <ul class="collapse">
+  <li><a href="#the-cost-of-ignoring-imbalance" id="toc-the-cost-of-ignoring-imbalance" class="nav-link" data-scroll-target="#the-cost-of-ignoring-imbalance">7.1 The Cost of Ignoring Imbalance</a></li>
+  <li><a href="#defining-a-cost-matrix" id="toc-defining-a-cost-matrix" class="nav-link" data-scroll-target="#defining-a-cost-matrix">7.2 Defining a Cost Matrix</a></li>
+  <li><a href="#solution-1-decision-threshold-tuning" id="toc-solution-1-decision-threshold-tuning" class="nav-link" data-scroll-target="#solution-1-decision-threshold-tuning">7.3 Solution 1: Decision Threshold Tuning</a>
+  <ul class="collapse">
+  <li><a href="#threshold-sweep" id="toc-threshold-sweep" class="nav-link" data-scroll-target="#threshold-sweep">Threshold sweep</a></li>
+  <li><a href="#performance-at-the-cost-optimal-threshold" id="toc-performance-at-the-cost-optimal-threshold" class="nav-link" data-scroll-target="#performance-at-the-cost-optimal-threshold">Performance at the cost-optimal threshold</a></li>
+  </ul></li>
+  <li><a href="#solution-2-adjusted-class-prior-lda" id="toc-solution-2-adjusted-class-prior-lda" class="nav-link" data-scroll-target="#solution-2-adjusted-class-prior-lda">7.4 Solution 2: Adjusted Class Prior (LDA)</a></li>
+  <li><a href="#solution-3-resampling" id="toc-solution-3-resampling" class="nav-link" data-scroll-target="#solution-3-resampling">7.5 Solution 3: Resampling</a>
+  <ul class="collapse">
+  <li><a href="#strategies" id="toc-strategies" class="nav-link" data-scroll-target="#strategies">Strategies</a></li>
+  <li><a href="#confusion-matrices-at-threshold-0.5" id="toc-confusion-matrices-at-threshold-0.5" class="nav-link" data-scroll-target="#confusion-matrices-at-threshold-0.5">Confusion matrices at threshold 0.5</a></li>
+  </ul></li>
+  <li><a href="#overall-comparison" id="toc-overall-comparison" class="nav-link" data-scroll-target="#overall-comparison">7.6 Overall Comparison</a>
+  <ul class="collapse">
+  <li><a href="#key-takeaways" id="toc-key-takeaways" class="nav-link" data-scroll-target="#key-takeaways">Key takeaways</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Credit Card Default: EDA &amp; Preprocessing</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="overview" class="level1">
+<h1>Overview</h1>
+<p>This report analyses the <strong>UCI Default of Credit Card Clients</strong> dataset (30 000 Taiwanese cardholders, 2005). The goal is to predict whether a client will default on their payment in October 2005.</p>
+<hr>
+</section>
+<section id="load-basic-cleaning" class="level1">
+<h1>1. Load &amp; Basic Cleaning</h1>
+<p>We first load the dataset from a local cache (or download it if absent), drop the meaningless <code>ID</code> column, and rename every feature to a more readable snake-case convention. Two helper label columns (<code>edu_label</code>, <code>gender_label</code>) are created <strong>for visualisation only</strong> and will be dropped before modelling.</p>
+<div id="540efbd8" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> skew</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> StandardScaler</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>local_file <span class="op">=</span> <span class="st">"default_credit_card_clients.xlsx"</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> (<span class="st">"https://archive.ics.uci.edu/ml/machine-learning-databases"</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>       <span class="st">"/00350/default</span><span class="sc">%20o</span><span class="st">f</span><span class="sc">%20c</span><span class="st">redit</span><span class="sc">%20c</span><span class="st">ard</span><span class="sc">%20c</span><span class="st">lients.xls"</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> os.path.exists(local_file):</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> pd.read_excel(local_file)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> pd.read_excel(url, header<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    df.to_excel(local_file, index<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>rename_dict <span class="op">=</span> {</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'LIMIT_BAL'</span>: <span class="st">'credit_limit'</span>, <span class="st">'SEX'</span>: <span class="st">'gender'</span>,</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">'EDUCATION'</span>: <span class="st">'education'</span>, <span class="st">'MARRIAGE'</span>: <span class="st">'marital_status'</span>, <span class="st">'AGE'</span>: <span class="st">'age'</span>,</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">'PAY_0'</span>: <span class="st">'status_sep'</span>, <span class="st">'PAY_2'</span>: <span class="st">'status_aug'</span>, <span class="st">'PAY_3'</span>: <span class="st">'status_jul'</span>,</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'PAY_4'</span>: <span class="st">'status_jun'</span>, <span class="st">'PAY_5'</span>: <span class="st">'status_may'</span>, <span class="st">'PAY_6'</span>: <span class="st">'status_apr'</span>,</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">'BILL_AMT1'</span>: <span class="st">'bill_sep'</span>, <span class="st">'BILL_AMT2'</span>: <span class="st">'bill_aug'</span>, <span class="st">'BILL_AMT3'</span>: <span class="st">'bill_jul'</span>,</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">'BILL_AMT4'</span>: <span class="st">'bill_jun'</span>, <span class="st">'BILL_AMT5'</span>: <span class="st">'bill_may'</span>, <span class="st">'BILL_AMT6'</span>: <span class="st">'bill_apr'</span>,</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">'PAY_AMT1'</span>: <span class="st">'paid_sep'</span>, <span class="st">'PAY_AMT2'</span>: <span class="st">'paid_aug'</span>, <span class="st">'PAY_AMT3'</span>: <span class="st">'paid_jul'</span>,</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">'PAY_AMT4'</span>: <span class="st">'paid_jun'</span>, <span class="st">'PAY_AMT5'</span>: <span class="st">'paid_may'</span>, <span class="st">'PAY_AMT6'</span>: <span class="st">'paid_apr'</span>,</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">'default payment next month'</span>: <span class="st">'default'</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>df.rename(columns<span class="op">=</span>rename_dict, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="st">'ID'</span> <span class="kw">in</span> df.columns:</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    df.drop(<span class="st">'ID'</span>, axis<span class="op">=</span><span class="dv">1</span>, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="co"># EDA-only label columns</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'edu_label'</span>]    <span class="op">=</span> df[<span class="st">'education'</span>].<span class="bu">map</span>({<span class="dv">1</span>: <span class="st">'Grad'</span>, <span class="dv">2</span>: <span class="st">'Uni'</span>, <span class="dv">3</span>: <span class="st">'HS'</span>,</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>                                           <span class="dv">4</span>: <span class="st">'Other'</span>, <span class="dv">5</span>: <span class="st">'Other'</span>,</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>                                           <span class="dv">6</span>: <span class="st">'Other'</span>, <span class="dv">0</span>: <span class="st">'Other'</span>})</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'gender_label'</span>] <span class="op">=</span> df[<span class="st">'gender'</span>].<span class="bu">map</span>({<span class="dv">1</span>: <span class="st">'Male'</span>, <span class="dv">2</span>: <span class="st">'Female'</span>})</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Shape: </span><span class="sc">{</span>df<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>df.head(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Shape: (30000, 26)</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="133">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">credit_limit</th>
+<th data-quarto-table-cell-role="th">gender</th>
+<th data-quarto-table-cell-role="th">education</th>
+<th data-quarto-table-cell-role="th">marital_status</th>
+<th data-quarto-table-cell-role="th">age</th>
+<th data-quarto-table-cell-role="th">status_sep</th>
+<th data-quarto-table-cell-role="th">status_aug</th>
+<th data-quarto-table-cell-role="th">status_jul</th>
+<th data-quarto-table-cell-role="th">status_jun</th>
+<th data-quarto-table-cell-role="th">status_may</th>
+<th data-quarto-table-cell-role="th">...</th>
+<th data-quarto-table-cell-role="th">bill_apr</th>
+<th data-quarto-table-cell-role="th">paid_sep</th>
+<th data-quarto-table-cell-role="th">paid_aug</th>
+<th data-quarto-table-cell-role="th">paid_jul</th>
+<th data-quarto-table-cell-role="th">paid_jun</th>
+<th data-quarto-table-cell-role="th">paid_may</th>
+<th data-quarto-table-cell-role="th">paid_apr</th>
+<th data-quarto-table-cell-role="th">default</th>
+<th data-quarto-table-cell-role="th">edu_label</th>
+<th data-quarto-table-cell-role="th">gender_label</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>20000</td>
+<td>2</td>
+<td>2</td>
+<td>1</td>
+<td>24</td>
+<td>2</td>
+<td>2</td>
+<td>-1</td>
+<td>-1</td>
+<td>-2</td>
+<td>...</td>
+<td>0</td>
+<td>0</td>
+<td>689</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>Uni</td>
+<td>Female</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>120000</td>
+<td>2</td>
+<td>2</td>
+<td>2</td>
+<td>26</td>
+<td>-1</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>...</td>
+<td>3261</td>
+<td>0</td>
+<td>1000</td>
+<td>1000</td>
+<td>1000</td>
+<td>0</td>
+<td>2000</td>
+<td>1</td>
+<td>Uni</td>
+<td>Female</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>90000</td>
+<td>2</td>
+<td>2</td>
+<td>2</td>
+<td>34</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>...</td>
+<td>15549</td>
+<td>1518</td>
+<td>1500</td>
+<td>1000</td>
+<td>1000</td>
+<td>1000</td>
+<td>5000</td>
+<td>0</td>
+<td>Uni</td>
+<td>Female</td>
+</tr>
+</tbody>
+</table>
+
+<p>3 rows × 26 columns</p>
+</div>
+</div>
+</div>
+<p>The dataset contains <strong>30 000 rows</strong> and <strong>25 feature columns</strong> after renaming. No structural issues (duplicate headers, merged cells) were found in the raw Excel file.</p>
+<hr>
+</section>
+<section id="data-integrity-summary" class="level1">
+<h1>2. Data Integrity &amp; Summary</h1>
+<p>Before any modelling we perform a per-column audit covering: data type, count of missing values, mean, skewness and excess kurtosis.</p>
+<div id="f0755a9a" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> academic_summary(df_in):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    numeric_df <span class="op">=</span> df_in.select_dtypes(include<span class="op">=</span>[np.number])</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    summary <span class="op">=</span> pd.DataFrame(index<span class="op">=</span>numeric_df.columns)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    summary[<span class="st">'Type'</span>]     <span class="op">=</span> numeric_df.dtypes</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    summary[<span class="st">'Missing'</span>]  <span class="op">=</span> numeric_df.isnull().<span class="bu">sum</span>()</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    summary[<span class="st">'Mean'</span>]     <span class="op">=</span> numeric_df.mean().<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    summary[<span class="st">'Skewness'</span>] <span class="op">=</span> numeric_df.skew().<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    summary[<span class="st">'Kurtosis'</span>] <span class="op">=</span> numeric_df.kurt().<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> summary</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>academic_summary(df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="134">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Type</th>
+<th data-quarto-table-cell-role="th">Missing</th>
+<th data-quarto-table-cell-role="th">Mean</th>
+<th data-quarto-table-cell-role="th">Skewness</th>
+<th data-quarto-table-cell-role="th">Kurtosis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">credit_limit</th>
+<td>int64</td>
+<td>0</td>
+<td>167484.32</td>
+<td>0.99</td>
+<td>0.54</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">gender</th>
+<td>int64</td>
+<td>0</td>
+<td>1.60</td>
+<td>-0.42</td>
+<td>-1.82</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">education</th>
+<td>int64</td>
+<td>0</td>
+<td>1.85</td>
+<td>0.97</td>
+<td>2.08</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">marital_status</th>
+<td>int64</td>
+<td>0</td>
+<td>1.55</td>
+<td>-0.02</td>
+<td>-1.36</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">age</th>
+<td>int64</td>
+<td>0</td>
+<td>35.49</td>
+<td>0.73</td>
+<td>0.04</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">status_sep</th>
+<td>int64</td>
+<td>0</td>
+<td>-0.02</td>
+<td>0.73</td>
+<td>2.72</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">status_aug</th>
+<td>int64</td>
+<td>0</td>
+<td>-0.13</td>
+<td>0.79</td>
+<td>1.57</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">status_jul</th>
+<td>int64</td>
+<td>0</td>
+<td>-0.17</td>
+<td>0.84</td>
+<td>2.08</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">status_jun</th>
+<td>int64</td>
+<td>0</td>
+<td>-0.22</td>
+<td>1.00</td>
+<td>3.50</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">status_may</th>
+<td>int64</td>
+<td>0</td>
+<td>-0.27</td>
+<td>1.01</td>
+<td>3.99</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">status_apr</th>
+<td>int64</td>
+<td>0</td>
+<td>-0.29</td>
+<td>0.95</td>
+<td>3.43</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">bill_sep</th>
+<td>int64</td>
+<td>0</td>
+<td>51223.33</td>
+<td>2.66</td>
+<td>9.81</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">bill_aug</th>
+<td>int64</td>
+<td>0</td>
+<td>49179.08</td>
+<td>2.71</td>
+<td>10.30</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">bill_jul</th>
+<td>int64</td>
+<td>0</td>
+<td>47013.15</td>
+<td>3.09</td>
+<td>19.78</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">bill_jun</th>
+<td>int64</td>
+<td>0</td>
+<td>43262.95</td>
+<td>2.82</td>
+<td>11.31</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">bill_may</th>
+<td>int64</td>
+<td>0</td>
+<td>40311.40</td>
+<td>2.88</td>
+<td>12.31</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">bill_apr</th>
+<td>int64</td>
+<td>0</td>
+<td>38871.76</td>
+<td>2.85</td>
+<td>12.27</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">paid_sep</th>
+<td>int64</td>
+<td>0</td>
+<td>5663.58</td>
+<td>14.67</td>
+<td>415.25</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">paid_aug</th>
+<td>int64</td>
+<td>0</td>
+<td>5921.16</td>
+<td>30.45</td>
+<td>1641.63</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">paid_jul</th>
+<td>int64</td>
+<td>0</td>
+<td>5225.68</td>
+<td>17.22</td>
+<td>564.31</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">paid_jun</th>
+<td>int64</td>
+<td>0</td>
+<td>4826.08</td>
+<td>12.90</td>
+<td>277.33</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">paid_may</th>
+<td>int64</td>
+<td>0</td>
+<td>4799.39</td>
+<td>11.13</td>
+<td>180.06</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">paid_apr</th>
+<td>int64</td>
+<td>0</td>
+<td>5215.50</td>
+<td>10.64</td>
+<td>167.16</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">default</th>
+<td>int64</td>
+<td>0</td>
+<td>0.22</td>
+<td>1.34</td>
+<td>-0.20</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p><strong>Key findings:</strong></p>
+<ul>
+<li><strong>No missing values</strong>: the dataset is complete, so no imputation is required.</li>
+<li><strong>Monetary columns</strong> (<code>bill_*</code>, <code>paid_*</code>, <code>credit_limit</code>) show strong positive skewness (typically &gt; 2), indicating a long right tail consistent with a small number of very high-spending or high-limit clients. These columns will benefit from a log transform.</li>
+<li><strong>Repayment status columns</strong> (<code>status_*</code>) are encoded as integers (−2 to 8). They are ordinal, not continuous, and will be treated accordingly.</li>
+<li><strong>Target (<code>default</code>)</strong> is binary (0 / 1).</li>
+</ul>
+<hr>
+</section>
+<section id="visual-eda" class="level1">
+<h1>3. Visual EDA</h1>
+<section id="univariate-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="univariate-analysis">3.1 Univariate Analysis</h2>
+<p>We inspect the distribution of the target variable, age, credit limit, and education level.</p>
+<div id="fdd96320" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">9</span>))</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>sns.countplot(x<span class="op">=</span><span class="st">'default'</span>, data<span class="op">=</span>df, ax<span class="op">=</span>axes[<span class="dv">0</span>, <span class="dv">0</span>], palette<span class="op">=</span><span class="st">'viridis'</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>, <span class="dv">0</span>].set_title(<span class="st">'Target Balance (Default vs Non-Default)'</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>, <span class="dv">0</span>].set_xlabel(<span class="st">'Default (0 = No, 1 = Yes)'</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>sns.histplot(df[<span class="st">'age'</span>], bins<span class="op">=</span><span class="dv">30</span>, kde<span class="op">=</span><span class="va">True</span>, ax<span class="op">=</span>axes[<span class="dv">0</span>, <span class="dv">1</span>], color<span class="op">=</span><span class="st">'skyblue'</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>, <span class="dv">1</span>].set_title(<span class="st">'Age Distribution'</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>sns.histplot(df[<span class="st">'credit_limit'</span>], bins<span class="op">=</span><span class="dv">30</span>, kde<span class="op">=</span><span class="va">True</span>, ax<span class="op">=</span>axes[<span class="dv">1</span>, <span class="dv">0</span>], color<span class="op">=</span><span class="st">'salmon'</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>, <span class="dv">0</span>].set_title(<span class="st">'Credit Limit Distribution'</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>sns.countplot(x<span class="op">=</span><span class="st">'edu_label'</span>, data<span class="op">=</span>df, ax<span class="op">=</span>axes[<span class="dv">1</span>, <span class="dv">1</span>], palette<span class="op">=</span><span class="st">'pastel'</span>,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>              order<span class="op">=</span>[<span class="st">'Grad'</span>, <span class="st">'Uni'</span>, <span class="st">'HS'</span>, <span class="st">'Other'</span>])</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>, <span class="dv">1</span>].set_title(<span class="st">'Education Background'</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="first_project_files/figure-html/cell-4-output-1.png" width="1333" height="852" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretations:</strong></p>
+<ul>
+<li><strong>Class imbalance</strong>: roughly 78 % of clients did <em>not</em> default vs.&nbsp;22 % who did. This imbalance is moderate, it will be accounted for in modelling but is not severe enough to require aggressive resampling on its own.</li>
+<li><strong>Age</strong>: ages range from 21 to 79, with a right-skewed distribution peaking around 26–30. Most clients are young adults, the long right tail means a handful of elderly clients hold much higher credit limits on average.</li>
+<li><strong>Credit limit</strong>: highly right-skewed: most clients cluster at lower limits (NT$50 000–200 000) with a few outliers exceeding NT$800 000. Log transformation will be applied before modelling.</li>
+<li><strong>Education</strong>: university graduates form the largest group, followed by graduate-school cardholders. The small “Other/Unknown” category (codes 0, 5, 6) will be collapsed into a single level.</li>
+</ul>
+<hr>
+</section>
+<section id="bivariate-analysis-features-vs-default" class="level2">
+<h2 class="anchored" data-anchor-id="bivariate-analysis-features-vs-default">3.2 Bivariate Analysis: Features vs Default</h2>
+<div id="eb5f633a" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>))</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>sns.boxplot(x<span class="op">=</span><span class="st">'default'</span>, y<span class="op">=</span><span class="st">'age'</span>, data<span class="op">=</span>df, palette<span class="op">=</span><span class="st">'Set2'</span>, ax<span class="op">=</span>axes[<span class="dv">0</span>])</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'Age vs Default Status'</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">'Default (0 = No, 1 = Yes)'</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>sns.boxplot(x<span class="op">=</span><span class="st">'default'</span>, y<span class="op">=</span><span class="st">'credit_limit'</span>, data<span class="op">=</span>df, palette<span class="op">=</span><span class="st">'Set2'</span>, ax<span class="op">=</span>axes[<span class="dv">1</span>])</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'Credit Limit vs Default Status'</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">'Default (0 = No, 1 = Yes)'</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="first_project_files/figure-html/cell-5-output-1.png" width="1141" height="468" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretations:</strong></p>
+<ul>
+<li><strong>Age</strong>: the median age is very similar across both groups (around 35), suggesting age alone is a weak discriminator. The interquartile ranges overlap heavily, any predictive power age carries is likely captured through interaction with other variables.</li>
+<li><strong>Credit limit</strong>: defaulters tend to hold <em>lower</em> credit limits than non-defaulters. This makes economic sense: issuers typically grant higher limits to clients with a stronger repayment history. The difference is meaningful but distributions still overlap substantially, so credit limit will be one signal among many rather than a dominant predictor.</li>
+</ul>
+<hr>
+</section>
+<section id="multicollinearity-assessment" class="level2">
+<h2 class="anchored" data-anchor-id="multicollinearity-assessment">3.3 Multicollinearity Assessment</h2>
+<p>High correlations between predictors can distort probabilistic models (e.g.&nbsp;Naïve Bayes) and inflate variance in regression-based approaches. We focus on the six monthly bill-amount columns.</p>
+<div id="d64c4400" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>bill_cols <span class="op">=</span> [c <span class="cf">for</span> c <span class="kw">in</span> df.columns <span class="cf">if</span> <span class="st">'bill'</span> <span class="kw">in</span> c]</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="dv">6</span>))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>sns.heatmap(df[bill_cols].corr(), annot<span class="op">=</span><span class="va">True</span>, cmap<span class="op">=</span><span class="st">'viridis'</span>, fmt<span class="op">=</span><span class="st">".2f"</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>            linewidths<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Pairwise Correlations: Monthly Bill Amounts"</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="first_project_files/figure-html/cell-6-output-1.png" width="804" height="565" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretations:</strong></p>
+<ul>
+<li>Adjacent months (e.g.&nbsp;<code>bill_sep</code> and <code>bill_aug</code>) show very high correlations (around 0.90–0.95), which is expected: a client’s outstanding balance carries over month to month.</li>
+<li>Correlations weaken with temporal distance : <code>bill_sep</code> and <code>bill_apr</code> are still moderately correlated (around 0.70), but less so than neighbouring months.</li>
+<li>This near-multicollinearity is a known challenge for Naïve Bayes (which assumes feature independence) and for LDA (which inverts the covariance matrix). Dimensionality reduction or careful feature selection will be considered during modelling.</li>
+</ul>
+<hr>
+</section>
+<section id="temporal-trends-bills-vs-payments" class="level2">
+<h2 class="anchored" data-anchor-id="temporal-trends-bills-vs-payments">3.4 Temporal Trends: Bills vs Payments</h2>
+<p>We plot the mean bill amount and mean payment amount across the six observation months (April–September 2005) to detect any macro-level trend.</p>
+<div id="80d60235" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>bill_cols_ordered <span class="op">=</span> [<span class="st">'bill_apr'</span>, <span class="st">'bill_may'</span>, <span class="st">'bill_jun'</span>,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                     <span class="st">'bill_jul'</span>, <span class="st">'bill_aug'</span>, <span class="st">'bill_sep'</span>]</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>paid_cols_ordered <span class="op">=</span> [<span class="st">'paid_apr'</span>, <span class="st">'paid_may'</span>, <span class="st">'paid_jun'</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                     <span class="st">'paid_jul'</span>, <span class="st">'paid_aug'</span>, <span class="st">'paid_sep'</span>]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>months <span class="op">=</span> [<span class="st">'Apr'</span>, <span class="st">'May'</span>, <span class="st">'Jun'</span>, <span class="st">'Jul'</span>, <span class="st">'Aug'</span>, <span class="st">'Sep'</span>]</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>plt.plot(months, df[bill_cols_ordered].mean(), marker<span class="op">=</span><span class="st">'o'</span>, label<span class="op">=</span><span class="st">'Avg Bill Amount'</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>plt.plot(months, df[paid_cols_ordered].mean(), marker<span class="op">=</span><span class="st">'s'</span>, label<span class="op">=</span><span class="st">'Avg Amount Paid'</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">'Average Bill vs Payment Over Time (Apr–Sep 2005)'</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'NT$ (average across all clients)'</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>plt.legend()</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>plt.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="first_project_files/figure-html/cell-7-output-1.png" width="949" height="469" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretations:</strong></p>
+<ul>
+<li>Average outstanding bill amounts remain <strong>consistently higher</strong> than average payments across all months, confirming that most clients carry a revolving balance.</li>
+<li>The gap between billed and paid amounts is relatively stable, suggesting no dramatic macro shock during this period.</li>
+<li>Both series are fairly flat month-to-month, indicating the dataset captures a steady-state spending regime rather than a seasonal spike. The mismatch between billed and paid amounts is a structural feature that repayment-status variables will encode more directly.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="preprocessing-pipeline" class="level1">
+<h1>4. Preprocessing Pipeline</h1>
+<section id="variable-grouping" class="level2">
+<h2 class="anchored" data-anchor-id="variable-grouping">4.1 Variable Grouping</h2>
+<p>We explicitly categorise every feature before applying transformations, ensuring the right treatment for each variable type.</p>
+<div id="202166b2" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>monetary_cols <span class="op">=</span> [</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">'credit_limit'</span>, <span class="st">'age'</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'bill_sep'</span>, <span class="st">'bill_aug'</span>, <span class="st">'bill_jul'</span>, <span class="st">'bill_jun'</span>, <span class="st">'bill_may'</span>, <span class="st">'bill_apr'</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'paid_sep'</span>, <span class="st">'paid_aug'</span>, <span class="st">'paid_jul'</span>, <span class="st">'paid_jun'</span>, <span class="st">'paid_may'</span>, <span class="st">'paid_apr'</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>ordinal_cols <span class="op">=</span> [</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'education'</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'status_sep'</span>, <span class="st">'status_aug'</span>, <span class="st">'status_jul'</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'status_jun'</span>, <span class="st">'status_may'</span>, <span class="st">'status_apr'</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>nominal_cols <span class="op">=</span> [<span class="st">'gender'</span>, <span class="st">'marital_status'</span>]</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Monetary (continuous / skewed):"</span>, monetary_cols)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Ordinal (integer-coded):"</span>, ordinal_cols)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Nominal (to one-hot encode):"</span>, nominal_cols)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Monetary (continuous / skewed): ['credit_limit', 'age', 'bill_sep', 'bill_aug', 'bill_jul', 'bill_jun', 'bill_may', 'bill_apr', 'paid_sep', 'paid_aug', 'paid_jul', 'paid_jun', 'paid_may', 'paid_apr']
+
+Ordinal (integer-coded): ['education', 'status_sep', 'status_aug', 'status_jul', 'status_jun', 'status_may', 'status_apr']
+
+Nominal (to one-hot encode): ['gender', 'marital_status']</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="cleaning-encoding" class="level2">
+<h2 class="anchored" data-anchor-id="cleaning-encoding">4.2 Cleaning &amp; Encoding</h2>
+<p>Undocumented category codes (0, 5, 6 in <code>education</code>; 0 in <code>marital_status</code>) are collapsed into the existing “Other” category. Nominal variables are one-hot encoded (dropping the first level to avoid perfect multicollinearity).</p>
+<div id="3de96646" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'education'</span>]      <span class="op">=</span> df[<span class="st">'education'</span>].replace([<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">6</span>], <span class="dv">4</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'marital_status'</span>] <span class="op">=</span> df[<span class="st">'marital_status'</span>].replace(<span class="dv">0</span>, <span class="dv">3</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>df_encoded <span class="op">=</span> pd.get_dummies(df, columns<span class="op">=</span>nominal_cols, drop_first<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> df_encoded.drop(columns<span class="op">=</span>[<span class="st">'default'</span>, <span class="st">'edu_label'</span>, <span class="st">'gender_label'</span>], errors<span class="op">=</span><span class="st">'ignore'</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df_encoded[<span class="st">'default'</span>]</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Feature matrix shape: </span><span class="sc">{</span>X<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Columns:"</span>, <span class="bu">list</span>(X.columns))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Feature matrix shape: (30000, 24)
+Columns: ['credit_limit', 'education', 'age', 'status_sep', 'status_aug', 'status_jul', 'status_jun', 'status_may', 'status_apr', 'bill_sep', 'bill_aug', 'bill_jul', 'bill_jun', 'bill_may', 'bill_apr', 'paid_sep', 'paid_aug', 'paid_jul', 'paid_jun', 'paid_may', 'paid_apr', 'gender_2', 'marital_status_2', 'marital_status_3']</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="train-test-split" class="level2">
+<h2 class="anchored" data-anchor-id="train-test-split">4.3 Train / Test Split</h2>
+<p>A stratified 70 / 30 split preserves the original class ratio in both subsets, preventing optimistic evaluation bias from accidental over-representation of non-defaults in the test set.</p>
+<div id="1a5f79bb" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>X_train, X_test, y_train, y_test <span class="op">=</span> train_test_split(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    X, y, test_size<span class="op">=</span><span class="fl">0.3</span>, random_state<span class="op">=</span><span class="dv">42</span>, stratify<span class="op">=</span>y</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Training set : </span><span class="sc">{</span>X_train<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">}</span><span class="ss"> rows  "</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(default rate = </span><span class="sc">{</span>y_train<span class="sc">.</span>mean()<span class="sc">:.3f}</span><span class="ss">)"</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Test set     : </span><span class="sc">{</span>X_test<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">}</span><span class="ss"> rows  "</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(default rate = </span><span class="sc">{</span>y_test<span class="sc">.</span>mean()<span class="sc">:.3f}</span><span class="ss">)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Training set : 21000 rows  (default rate = 0.221)
+Test set     : 9000 rows  (default rate = 0.221)</code></pre>
+</div>
+</div>
+<p>The near-identical default rates in both splits confirm that stratification worked correctly.</p>
+<hr>
+</section>
+<section id="selective-log-transformation" class="level2">
+<h2 class="anchored" data-anchor-id="selective-log-transformation">4.4 Selective Log Transformation</h2>
+<p>To reduce skewness in monetary columns we apply <strong>log1p</strong> (i.e.&nbsp;log(1 + x)) but only to columns whose absolute skewness on the training set exceeds a threshold of 0.75. This threshold-based approach avoids unnecessarily transforming variables that are already approximately symmetric, and the threshold decision is made on training data only to prevent data leakage.</p>
+<div id="edfee588" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>SKEW_THRESHOLD <span class="op">=</span> <span class="fl">0.75</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>logged_cols <span class="op">=</span> []</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>train_skewness_before <span class="op">=</span> X_train[monetary_cols].skew()</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> monetary_cols:</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">abs</span>(train_skewness_before[col]) <span class="op">&gt;</span> SKEW_THRESHOLD:</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        X_train[col] <span class="op">=</span> np.log1p(X_train[col].clip(lower<span class="op">=</span><span class="dv">0</span>))</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        X_test[col]  <span class="op">=</span> np.log1p(X_test[col].clip(lower<span class="op">=</span><span class="dv">0</span>))</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        logged_cols.append(col)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Columns log-transformed (</span><span class="sc">{</span><span class="bu">len</span>(logged_cols)<span class="sc">}</span><span class="ss">): </span><span class="sc">{</span>logged_cols<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Columns log-transformed (13): ['credit_limit', 'bill_sep', 'bill_aug', 'bill_jul', 'bill_jun', 'bill_may', 'bill_apr', 'paid_sep', 'paid_aug', 'paid_jul', 'paid_jun', 'paid_may', 'paid_apr']</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="standardisation" class="level2">
+<h2 class="anchored" data-anchor-id="standardisation">4.5 Standardisation</h2>
+<p>Finally, all features are standardised to zero mean and unit variance using <code>StandardScaler</code> fitted <strong>exclusively on the training set</strong>. The same parameters are then applied to the test set, again avoiding leakage.</p>
+<div id="169e76a5" class="cell" data-execution_count="11">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>final_cols <span class="op">=</span> (monetary_cols <span class="op">+</span> ordinal_cols <span class="op">+</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>              [c <span class="cf">for</span> c <span class="kw">in</span> X.columns <span class="cf">if</span> <span class="st">'gender_'</span> <span class="kw">in</span> c <span class="kw">or</span> <span class="st">'marital_status_'</span> <span class="kw">in</span> c])</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>X_train <span class="op">=</span> X_train[final_cols]</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>X_test  <span class="op">=</span> X_test[final_cols]</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>scaler <span class="op">=</span> StandardScaler()</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>X_train_scaled <span class="op">=</span> pd.DataFrame(scaler.fit_transform(X_train), columns<span class="op">=</span>X_train.columns)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>X_test_scaled  <span class="op">=</span> pd.DataFrame(scaler.transform(X_test),  columns<span class="op">=</span>X_test.columns)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Final feature count: </span><span class="sc">{</span>X_train_scaled<span class="sc">.</span>shape[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Sample of scaled training data:"</span>)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>X_train_scaled.head(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Final feature count: 24
+Sample of scaled training data:</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="143">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">credit_limit</th>
+<th data-quarto-table-cell-role="th">age</th>
+<th data-quarto-table-cell-role="th">bill_sep</th>
+<th data-quarto-table-cell-role="th">bill_aug</th>
+<th data-quarto-table-cell-role="th">bill_jul</th>
+<th data-quarto-table-cell-role="th">bill_jun</th>
+<th data-quarto-table-cell-role="th">bill_may</th>
+<th data-quarto-table-cell-role="th">bill_apr</th>
+<th data-quarto-table-cell-role="th">paid_sep</th>
+<th data-quarto-table-cell-role="th">paid_aug</th>
+<th data-quarto-table-cell-role="th">...</th>
+<th data-quarto-table-cell-role="th">education</th>
+<th data-quarto-table-cell-role="th">status_sep</th>
+<th data-quarto-table-cell-role="th">status_aug</th>
+<th data-quarto-table-cell-role="th">status_jul</th>
+<th data-quarto-table-cell-role="th">status_jun</th>
+<th data-quarto-table-cell-role="th">status_may</th>
+<th data-quarto-table-cell-role="th">status_apr</th>
+<th data-quarto-table-cell-role="th">gender_2</th>
+<th data-quarto-table-cell-role="th">marital_status_2</th>
+<th data-quarto-table-cell-role="th">marital_status_3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>0.339735</td>
+<td>-0.373240</td>
+<td>0.897414</td>
+<td>0.897951</td>
+<td>0.904854</td>
+<td>0.922503</td>
+<td>0.954345</td>
+<td>0.968320</td>
+<td>0.634002</td>
+<td>0.648726</td>
+<td>...</td>
+<td>0.206802</td>
+<td>0.013521</td>
+<td>0.111565</td>
+<td>0.138827</td>
+<td>0.189478</td>
+<td>0.240862</td>
+<td>0.253727</td>
+<td>0.810435</td>
+<td>0.934699</td>
+<td>-0.113266</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>-0.159401</td>
+<td>-0.590997</td>
+<td>0.373999</td>
+<td>0.447374</td>
+<td>0.540263</td>
+<td>0.624395</td>
+<td>0.651680</td>
+<td>0.688985</td>
+<td>0.577681</td>
+<td>0.804728</td>
+<td>...</td>
+<td>-1.132343</td>
+<td>0.013521</td>
+<td>0.111565</td>
+<td>0.138827</td>
+<td>0.189478</td>
+<td>2.020319</td>
+<td>0.253727</td>
+<td>0.810435</td>
+<td>0.934699</td>
+<td>-0.113266</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>-0.396375</td>
+<td>-0.699875</td>
+<td>0.667073</td>
+<td>0.686904</td>
+<td>0.657573</td>
+<td>0.590029</td>
+<td>0.603384</td>
+<td>0.636047</td>
+<td>0.449331</td>
+<td>0.381401</td>
+<td>...</td>
+<td>-1.132343</td>
+<td>0.013521</td>
+<td>0.111565</td>
+<td>0.138827</td>
+<td>0.189478</td>
+<td>0.240862</td>
+<td>0.253727</td>
+<td>-1.233905</td>
+<td>0.934699</td>
+<td>-0.113266</td>
+</tr>
+</tbody>
+</table>
+
+<p>3 rows × 24 columns</p>
+</div>
+</div>
+</div>
+<p>Standardisation is essential for distance-based and probabilistic models (LDA, Naïve Bayes, logistic regression with regularisation) that are sensitive to feature scale.</p>
+<hr>
+</section>
+</section>
+<section id="preprocessing-verification" class="level1">
+<h1>5. Preprocessing Verification</h1>
+<p>We confirm that log transformation meaningfully reduced skewness in the targeted columns.</p>
+<div id="7059ba59" class="cell" data-execution_count="12">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> logged_cols:</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    comparison <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Skew Before'</span>: train_skewness_before[logged_cols].values,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Skew After'</span>:  X_train[logged_cols].skew().values</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    }, index<span class="op">=</span>logged_cols)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    comparison[<span class="st">'Reduction %'</span>] <span class="op">=</span> (</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        (comparison[<span class="st">'Skew Before'</span>].<span class="bu">abs</span>() <span class="op">-</span> comparison[<span class="st">'Skew After'</span>].<span class="bu">abs</span>())</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">/</span> comparison[<span class="st">'Skew Before'</span>].<span class="bu">abs</span>() <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    ).<span class="bu">round</span>(<span class="dv">1</span>)</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    display(comparison.<span class="bu">round</span>(<span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Skew Before</th>
+<th data-quarto-table-cell-role="th">Skew After</th>
+<th data-quarto-table-cell-role="th">Reduction %</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">credit_limit</th>
+<td>0.999</td>
+<td>-0.517</td>
+<td>48.3</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">bill_sep</th>
+<td>2.666</td>
+<td>-1.720</td>
+<td>35.5</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">bill_aug</th>
+<td>2.734</td>
+<td>-1.612</td>
+<td>41.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">bill_jul</th>
+<td>2.739</td>
+<td>-1.546</td>
+<td>43.6</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">bill_jun</th>
+<td>2.831</td>
+<td>-1.486</td>
+<td>47.5</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">bill_may</th>
+<td>2.930</td>
+<td>-1.397</td>
+<td>52.3</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">bill_apr</th>
+<td>2.898</td>
+<td>-1.275</td>
+<td>56.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">paid_sep</th>
+<td>15.830</td>
+<td>-1.306</td>
+<td>91.7</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">paid_aug</th>
+<td>21.767</td>
+<td>-1.247</td>
+<td>94.3</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">paid_jul</th>
+<td>19.104</td>
+<td>-1.077</td>
+<td>94.4</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">paid_jun</th>
+<td>12.486</td>
+<td>-0.969</td>
+<td>92.2</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">paid_may</th>
+<td>10.926</td>
+<td>-0.935</td>
+<td>91.4</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">paid_apr</th>
+<td>10.054</td>
+<td>-0.845</td>
+<td>91.6</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p><strong>Interpretation:</strong> For all transformed columns, absolute skewness dropped substantially (typically from &gt; 2 to &lt; 1), bringing the distributions much closer to symmetry. This will improve the Gaussian assumptions underlying LDA and Naïve Bayes and reduce the influence of outliers on distance-based models.</p>
+<hr>
+</section>
+<section id="discriminant-probabilistic-classifiers" class="level1">
+<h1>6. Discriminant &amp; Probabilistic Classifiers</h1>
+<section id="overview-1" class="level2">
+<h2 class="anchored" data-anchor-id="overview-1">6.1 Overview</h2>
+<p>We evaluate three generative classifiers that share a common probabilistic framework: they all model <span class="math inline">\(P(\mathbf{x} \mid y)\)</span> and apply Bayes’ theorem to obtain the posterior <span class="math inline">\(P(y \mid \mathbf{x})\)</span>.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Covariance structure</th>
+<th>Decision boundary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>LDA</strong></td>
+<td>Shared <span class="math inline">\(\Sigma\)</span> across classes</td>
+<td>Linear</td>
+</tr>
+<tr class="even">
+<td><strong>QDA</strong></td>
+<td>Per-class <span class="math inline">\(\Sigma_k\)</span></td>
+<td>Quadratic</td>
+</tr>
+<tr class="odd">
+<td><strong>Gaussian Naïve Bayes</strong></td>
+<td>Diagonal (feature independence)</td>
+<td>Quadratic</td>
+</tr>
+</tbody>
+</table>
+<div id="51b07ca8" class="cell" data-execution_count="13">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.discriminant_analysis <span class="im">import</span> LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.naive_bayes <span class="im">import</span> GaussianNB</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> (</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    classification_report, confusion_matrix, roc_auc_score,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    RocCurveDisplay, ConfusionMatrixDisplay</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">'ignore'</span>)</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Reset indices so everything aligns cleanly</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>X_train_scaled <span class="op">=</span> X_train_scaled.reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>X_test_scaled  <span class="op">=</span> X_test_scaled.reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>y_train <span class="op">=</span> y_train.reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>y_test  <span class="op">=</span> y_test.reset_index(drop<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<hr>
+</section>
+<section id="linear-discriminant-analysis-lda" class="level2">
+<h2 class="anchored" data-anchor-id="linear-discriminant-analysis-lda">6.2 Linear Discriminant Analysis (LDA)</h2>
+<section id="theory" class="level3">
+<h3 class="anchored" data-anchor-id="theory">Theory</h3>
+<p>LDA assumes each class <span class="math inline">\(k\)</span> follows a multivariate Gaussian <span class="math inline">\(\mathcal{N}(\boldsymbol{\mu}_k, \Sigma)\)</span> with a <strong>shared</strong> covariance matrix <span class="math inline">\(\Sigma\)</span>. This shared-covariance assumption makes the log-posterior ratio linear in <span class="math inline">\(\mathbf{x}\)</span>, yielding linear decision boundaries. Parameters are estimated by maximum likelihood: class means <span class="math inline">\(\hat{\boldsymbol{\mu}}_k\)</span> and a pooled within-class scatter matrix.</p>
+<p><strong>Key assumptions:</strong></p>
+<ul>
+<li>Features are Gaussian within each class.</li>
+<li>All classes share the same covariance structure.</li>
+</ul>
+</section>
+<section id="fit-evaluate" class="level3">
+<h3 class="anchored" data-anchor-id="fit-evaluate">Fit &amp; Evaluate</h3>
+<div id="ae246df6" class="cell" data-execution_count="14">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>lda <span class="op">=</span> LinearDiscriminantAnalysis()</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>lda.fit(X_train_scaled, y_train)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>y_pred_lda <span class="op">=</span> lda.predict(X_test_scaled)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>y_prob_lda <span class="op">=</span> lda.predict_proba(X_test_scaled)[:, <span class="dv">1</span>]</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>auc_lda    <span class="op">=</span> roc_auc_score(y_test, y_prob_lda)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== LDA: Classification Report ==="</span>)</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(classification_report(y_test, y_pred_lda, target_names<span class="op">=</span>[<span class="st">'No Default'</span>, <span class="st">'Default'</span>]))</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ROC-AUC: </span><span class="sc">{</span>auc_lda<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== LDA: Classification Report ===
+              precision    recall  f1-score   support
+
+  No Default       0.82      0.96      0.89      7009
+     Default       0.65      0.27      0.38      1991
+
+    accuracy                           0.81      9000
+   macro avg       0.74      0.61      0.63      9000
+weighted avg       0.78      0.81      0.77      9000
+
+ROC-AUC: 0.7401</code></pre>
+</div>
+</div>
+<div id="f1cbb24e" class="cell" data-execution_count="15">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="dv">4</span>))</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_lda),</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>                       display_labels<span class="op">=</span>[<span class="st">'No Default'</span>, <span class="st">'Default'</span>]).plot(ax<span class="op">=</span>axes[<span class="dv">0</span>], colorbar<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'LDA - Confusion Matrix'</span>)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>RocCurveDisplay.from_predictions(y_test, y_prob_lda, ax<span class="op">=</span>axes[<span class="dv">1</span>],</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>                                 name<span class="op">=</span><span class="ss">f'LDA (AUC = </span><span class="sc">{</span>auc_lda<span class="sc">:.3f}</span><span class="ss">)'</span>)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot([<span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">1</span>], <span class="st">'k--'</span>, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'LDA - ROC Curve'</span>)</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="first_project_files/figure-html/cell-16-output-1.png" width="974" height="372" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="interpretation" class="level3">
+<h3 class="anchored" data-anchor-id="interpretation">Interpretation</h3>
+<ul>
+<li>LDA achieves <strong>81 % overall accuracy</strong>, however recall on non-defaulters is 96 % while recall on defaulters is only <strong>27 %</strong>, meaning nearly three quarters of actual defaulters are missed.</li>
+<li>The <strong>ROC-AUC of 0.74</strong> is the more meaningful summary: it confirms that LDA’s linear projection captures genuine discriminative signal, ranking a randomly chosen defaulter above a randomly chosen non-defaulter 74 % of the time.</li>
+<li>The precision / recall trade-off for the default class (precision 0.65, recall 0.27, F1 0.38) reflects the shared-covariance assumption pulling the decision boundary toward the majority class. Lowering the classification threshold from 0.5 would improve recall at the cost of precision.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="quadratic-discriminant-analysis-qda" class="level2">
+<h2 class="anchored" data-anchor-id="quadratic-discriminant-analysis-qda">6.3 Quadratic Discriminant Analysis (QDA)</h2>
+<section id="theory-1" class="level3">
+<h3 class="anchored" data-anchor-id="theory-1">Theory</h3>
+<p>QDA relaxes LDA’s shared-covariance assumption by estimating a <strong>separate</strong> covariance matrix <span class="math inline">\(\Sigma_k\)</span> for each class. The log-posterior then contains a quadratic term in <span class="math inline">\(\mathbf{x}\)</span>, producing curved decision boundaries. This gives QDA more flexibility but at the cost of estimating many more parameters (<span class="math inline">\(p(p+1)/2\)</span> per class), which can hurt performance when <span class="math inline">\(n\)</span> is small or features are highly correlated.</p>
+<p><strong>Key assumptions:</strong></p>
+<ul>
+<li>Features are Gaussian within each class.</li>
+<li>Classes may have different covariance structures.</li>
+</ul>
+</section>
+<section id="fit-evaluate-1" class="level3">
+<h3 class="anchored" data-anchor-id="fit-evaluate-1">Fit &amp; Evaluate</h3>
+<div id="8954f681" class="cell" data-execution_count="16">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>qda <span class="op">=</span> QuadraticDiscriminantAnalysis(reg_param<span class="op">=</span><span class="fl">0.01</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>qda.fit(X_train_scaled, y_train)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>y_pred_qda <span class="op">=</span> qda.predict(X_test_scaled)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>y_prob_qda <span class="op">=</span> qda.predict_proba(X_test_scaled)[:, <span class="dv">1</span>]</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>auc_qda    <span class="op">=</span> roc_auc_score(y_test, y_prob_qda)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== QDA: Classification Report ==="</span>)</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(classification_report(y_test, y_pred_qda, target_names<span class="op">=</span>[<span class="st">'No Default'</span>, <span class="st">'Default'</span>]))</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ROC-AUC: </span><span class="sc">{</span>auc_qda<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== QDA: Classification Report ===
+              precision    recall  f1-score   support
+
+  No Default       0.85      0.83      0.84      7009
+     Default       0.45      0.49      0.47      1991
+
+    accuracy                           0.75      9000
+   macro avg       0.65      0.66      0.65      9000
+weighted avg       0.76      0.75      0.76      9000
+
+ROC-AUC: 0.7151</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p><code>reg_param=0.01</code> adds a small ridge to each class covariance matrix, stabilising inversion when some features are near-collinear (as seen in the bill-amount correlations from Section 3.3).</p>
+</blockquote>
+<div id="7cdf400a" class="cell" data-execution_count="17">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="dv">4</span>))</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_qda),</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>                       display_labels<span class="op">=</span>[<span class="st">'No Default'</span>, <span class="st">'Default'</span>]).plot(ax<span class="op">=</span>axes[<span class="dv">0</span>], colorbar<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'QDA: Confusion Matrix'</span>)</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>RocCurveDisplay.from_predictions(y_test, y_prob_qda, ax<span class="op">=</span>axes[<span class="dv">1</span>],</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>                                 name<span class="op">=</span><span class="ss">f'QDA (AUC = </span><span class="sc">{</span>auc_qda<span class="sc">:.3f}</span><span class="ss">)'</span>)</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot([<span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">1</span>], <span class="st">'k--'</span>, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'QDA: ROC Curve'</span>)</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="first_project_files/figure-html/cell-18-output-1.png" width="974" height="372" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="interpretation-1" class="level3">
+<h3 class="anchored" data-anchor-id="interpretation-1">Interpretation</h3>
+<ul>
+<li>QDA sacrifices overall accuracy (75 % vs LDA’s 81 %) in exchange for much better balance on the default class: recall rises from 27 % (LDA) to <strong>49 %</strong>, and F1 improves from 0.38 to <strong>0.47</strong>. This reflects the quadratic boundary’s ability to enclose the default cluster more tightly.</li>
+<li>However, QDA’s <strong>ROC-AUC of 0.72 is the lowest of the three models</strong>, below LDA (0.74) and Naïve Bayes (0.74). The multicollinearity in the bill columns (Section 3.3) makes per-class covariance estimation unreliable.</li>
+<li>The two classes do appear to differ in their covariance structure (defaulters show more volatile spending), which is why QDA’s recall gain over LDA is real, but the correlated features limit how much the extra flexibility can be exploited.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="gaussian-naïve-bayes" class="level2">
+<h2 class="anchored" data-anchor-id="gaussian-naïve-bayes">6.4 Gaussian Naïve Bayes</h2>
+<section id="theory-2" class="level3">
+<h3 class="anchored" data-anchor-id="theory-2">Theory</h3>
+<p>Gaussian Naïve Bayes (GNB) takes the independence assumption to its extreme: given the class label, every feature is treated as <strong>conditionally independent</strong>, so the class-conditional density factorises as:</p>
+<p><span class="math display">\[P(\mathbf{x} \mid y = k) = \prod_{j=1}^{p} \mathcal{N}(x_j \mid \mu_{kj},\, \sigma_{kj}^2)\]</span></p>
+<p>This makes GNB equivalent to QDA with diagonal (per-class) covariance matrices. Parameter estimation is trivially fast and the model is robust to high dimensionality, but the independence assumption is strongly violated here (see the bill-amount correlations in Section 3).</p>
+<p><strong>Key assumptions:</strong></p>
+<ul>
+<li>Features are conditionally independent given the class label.</li>
+<li>Each feature is Gaussian within each class.</li>
+</ul>
+</section>
+<section id="fit-evaluate-2" class="level3">
+<h3 class="anchored" data-anchor-id="fit-evaluate-2">Fit &amp; Evaluate</h3>
+<div id="0d940412" class="cell" data-execution_count="18">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>gnb <span class="op">=</span> GaussianNB()</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>gnb.fit(X_train_scaled, y_train)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>y_pred_gnb <span class="op">=</span> gnb.predict(X_test_scaled)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>y_prob_gnb <span class="op">=</span> gnb.predict_proba(X_test_scaled)[:, <span class="dv">1</span>]</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>auc_gnb    <span class="op">=</span> roc_auc_score(y_test, y_prob_gnb)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Gaussian Naïve Bayes: Classification Report ==="</span>)</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(classification_report(y_test, y_pred_gnb, target_names<span class="op">=</span>[<span class="st">'No Default'</span>, <span class="st">'Default'</span>]))</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ROC-AUC: </span><span class="sc">{</span>auc_gnb<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Gaussian Naïve Bayes: Classification Report ===
+              precision    recall  f1-score   support
+
+  No Default       0.86      0.84      0.85      7009
+     Default       0.47      0.51      0.49      1991
+
+    accuracy                           0.76      9000
+   macro avg       0.66      0.67      0.67      9000
+weighted avg       0.77      0.76      0.77      9000
+
+ROC-AUC: 0.7396</code></pre>
+</div>
+</div>
+<div id="2a9efdcf" class="cell" data-execution_count="19">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="dv">4</span>))</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_gnb),</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>                       display_labels<span class="op">=</span>[<span class="st">'No Default'</span>, <span class="st">'Default'</span>]).plot(ax<span class="op">=</span>axes[<span class="dv">0</span>], colorbar<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'Naïve Bayes: Confusion Matrix'</span>)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>RocCurveDisplay.from_predictions(y_test, y_prob_gnb, ax<span class="op">=</span>axes[<span class="dv">1</span>],</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>                                 name<span class="op">=</span><span class="ss">f'Naïve Bayes (AUC = </span><span class="sc">{</span>auc_gnb<span class="sc">:.3f}</span><span class="ss">)'</span>)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot([<span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">1</span>], <span class="st">'k--'</span>, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'Naïve Bayes: ROC Curve'</span>)</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="first_project_files/figure-html/cell-20-output-1.png" width="974" height="372" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="interpretation-2" class="level3">
+<h3 class="anchored" data-anchor-id="interpretation-2">Interpretation</h3>
+<ul>
+<li>Despite the strongly violated independence assumption, GNB achieves a <strong>ROC-AUC of 0.74</strong>, matching LDA, this is probably because the ranking of predicted probabilities is still informative even when absolute probability values are miscalibrated.</li>
+<li>GNB has the <strong>highest recall on defaulters (51 %)</strong> and a competitive F1 of 0.49, outperforming both LDA (F1 0.38) and QDA (F1 0.47) on the minority class at the cost of lower overall accuracy (76 %).</li>
+<li>The precision on defaults is only 0.47 (vs LDA’s 0.65), confirming the miscalibration: GNB flags more clients as risky than warranted.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="model-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="model-comparison">6.5 Model Comparison</h2>
+<section id="combined-roc-curves" class="level3">
+<h3 class="anchored" data-anchor-id="combined-roc-curves">Combined ROC Curves</h3>
+<div id="25dd29e8" class="cell" data-execution_count="20">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, probs <span class="kw">in</span> [(<span class="st">'LDA'</span>, y_prob_lda), (<span class="st">'QDA'</span>, y_prob_qda), (<span class="st">'Naïve Bayes'</span>, y_prob_gnb)]:</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    RocCurveDisplay.from_predictions(y_test, probs, ax<span class="op">=</span>ax,</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>                                     name<span class="op">=</span><span class="ss">f'</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss"> (AUC = </span><span class="sc">{</span>roc_auc_score(y_test, probs)<span class="sc">:.3f}</span><span class="ss">)'</span>)</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>ax.plot([<span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">1</span>], <span class="st">'k--'</span>, lw<span class="op">=</span><span class="dv">1</span>, label<span class="op">=</span><span class="st">'Random classifier'</span>)</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'ROC Curves: LDA vs QDA vs Naïve Bayes'</span>)</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>ax.legend(loc<span class="op">=</span><span class="st">'lower right'</span>)</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="first_project_files/figure-html/cell-21-output-1.png" width="559" height="564" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="summary-table" class="level3">
+<h3 class="anchored" data-anchor-id="summary-table">Summary Table</h3>
+<div id="aa36a092" class="cell" data-execution_count="21">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> accuracy_score, precision_score, recall_score, f1_score</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> []</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, y_pred, y_prob <span class="kw">in</span> [</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'LDA'</span>,         y_pred_lda, y_prob_lda),</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'QDA'</span>,         y_pred_qda, y_prob_qda),</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'Naïve Bayes'</span>, y_pred_gnb, y_prob_gnb),</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    rows.append({</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Model'</span>:                  name,</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Accuracy'</span>:               accuracy_score(y_test, y_pred),</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Precision (Default)'</span>:    precision_score(y_test, y_pred),</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Recall (Default)'</span>:       recall_score(y_test, y_pred),</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">'F1 (Default)'</span>:           f1_score(y_test, y_pred),</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">'ROC-AUC'</span>:                roc_auc_score(y_test, y_prob),</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>summary_df <span class="op">=</span> pd.DataFrame(rows).set_index(<span class="st">'Model'</span>).<span class="bu">round</span>(<span class="dv">4</span>)</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>display(summary_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Accuracy</th>
+<th data-quarto-table-cell-role="th">Precision (Default)</th>
+<th data-quarto-table-cell-role="th">Recall (Default)</th>
+<th data-quarto-table-cell-role="th">F1 (Default)</th>
+<th data-quarto-table-cell-role="th">ROC-AUC</th>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">Model</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">LDA</th>
+<td>0.8066</td>
+<td>0.6517</td>
+<td>0.2697</td>
+<td>0.3815</td>
+<td>0.7401</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">QDA</th>
+<td>0.7520</td>
+<td>0.4451</td>
+<td>0.4902</td>
+<td>0.4665</td>
+<td>0.7151</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">Naïve Bayes</th>
+<td>0.7637</td>
+<td>0.4687</td>
+<td>0.5113</td>
+<td>0.4891</td>
+<td>0.7396</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="discussion" class="level3">
+<h3 class="anchored" data-anchor-id="discussion">Discussion</h3>
+<ul>
+<li><strong>LDA</strong> achieves the highest overall accuracy (81 %) and highest ROC-AUC (0.74), making it the best ranking model. Its weakness is the very low recall on defaulters (27 %): it is a conservative model that only flags cases it is highly confident about, producing a precision of 0.65 on the default class.</li>
+<li><strong>QDA</strong> has the lowest accuracy (75 %) and lowest AUC (0.72), but nearly doubles LDA’s recall on defaults (49 %). The extra covariance flexibility partially captures the different spending volatility between the two classes, though multicollinearity in the bill features caps the gains.</li>
+<li><strong>Gaussian Naïve Bayes</strong> strikes the best minority-class balance: highest default recall (51 %), best default F1 (0.49), and an AUC (0.74) that matches LDA. It is the best choice when catching defaulters matters more than precision, provided the output probabilities are recalibrated before use.</li>
+<li>The core issue of all three models is the <strong>precision–recall trade-off on the minority class</strong>, none reaches a default F1 above 0.49.</li>
+</ul>
+<hr>
+</section>
+</section>
+</section>
+<section id="cost-sensitive-learning" class="level1">
+<h1>7. Cost-Sensitive Learning</h1>
+<section id="the-cost-of-ignoring-imbalance" class="level2">
+<h2 class="anchored" data-anchor-id="the-cost-of-ignoring-imbalance">7.1 The Cost of Ignoring Imbalance</h2>
+<p>The dataset has a 22 % default rate , predicting “no default” for every observation would yield 78 % accuracy yet catch zero defaulters. More importantly, <strong>the two types of error are not equally costly</strong> in credit risk:</p>
+<ul>
+<li><strong>False Negative</strong> (missing a defaulter): the bank extends credit it will not recover, high financial loss.</li>
+<li><strong>False Positive</strong> (flagging a good client): a brief manual review is triggered, low administrative cost.</li>
+</ul>
+<p>This asymmetry must be encoded explicitly rather than left to the default 0.5 threshold.</p>
+<div id="229315c3" class="cell" data-execution_count="22">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> (</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    confusion_matrix, ConfusionMatrixDisplay,</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    classification_report, roc_auc_score,</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>    precision_score, recall_score, f1_score, accuracy_score</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.discriminant_analysis <span class="im">import</span> LinearDiscriminantAnalysis</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.naive_bayes <span class="im">import</span> GaussianNB</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Naive baseline: always predict majority class</span></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>y_always_no_default <span class="op">=</span> np.zeros(<span class="bu">len</span>(y_test), dtype<span class="op">=</span><span class="bu">int</span>)</span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Naive 'always No-Default' baseline"</span>)</span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(classification_report(y_test, y_always_no_default,</span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>                             target_names<span class="op">=</span>[<span class="st">'No Default'</span>, <span class="st">'Default'</span>]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Naive 'always No-Default' baseline
+              precision    recall  f1-score   support
+
+  No Default       0.78      1.00      0.88      7009
+     Default       0.00      0.00      0.00      1991
+
+    accuracy                           0.78      9000
+   macro avg       0.39      0.50      0.44      9000
+weighted avg       0.61      0.78      0.68      9000
+</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="defining-a-cost-matrix" class="level2">
+<h2 class="anchored" data-anchor-id="defining-a-cost-matrix">7.2 Defining a Cost Matrix</h2>
+<p>We assign costs reflecting the business reality of a credit card issuer.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Predicted: No Default</strong></th>
+<th><strong>Predicted: Default</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Actual: No Default</strong></td>
+<td>0 (TN)</td>
+<td>1 (FP unnecessary review)</td>
+</tr>
+<tr class="even">
+<td><strong>Actual: Default</strong></td>
+<td>5 (FN unrecovered credit)</td>
+<td>0 (TP)</td>
+</tr>
+</tbody>
+</table>
+<p>A missed defaulter costs <strong>5×</strong> more than a false alarm. This yields the theoretical optimal threshold:</p>
+<p><span class="math display">\[p^* = \frac{c_{FP}}{c_{FP} + c_{FN}} = \frac{1}{1 + 5} \approx 0.167\]</span></p>
+<p>Any client whose predicted default probability exceeds 0.167 should be classified as a defaulter.</p>
+<div id="db56f25d" class="cell" data-execution_count="23">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Cost matrix: rows = actual, cols = predicted</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="co">#              No Default  Default</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>C <span class="op">=</span> np.array([[<span class="dv">0</span>,          <span class="dv">1</span>],    <span class="co"># Actual: No Default</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>              [<span class="dv">5</span>,          <span class="dv">0</span>]])   <span class="co"># Actual: Default</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>c_fp <span class="op">=</span> C[<span class="dv">0</span>, <span class="dv">1</span>]   <span class="co"># FP cost</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>c_fn <span class="op">=</span> C[<span class="dv">1</span>, <span class="dv">0</span>]   <span class="co"># FN cost</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>p_star <span class="op">=</span> c_fp <span class="op">/</span> (c_fp <span class="op">+</span> c_fn)</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Theoretical cost-optimal threshold: p* = </span><span class="sc">{</span>p_star<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> expected_cost(y_true, y_pred, cost_matrix, normalize<span class="op">=</span><span class="va">True</span>):</span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>    cm <span class="op">=</span> confusion_matrix(y_true, y_pred)</span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> np.<span class="bu">sum</span>(cm <span class="op">*</span> cost_matrix)</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total <span class="op">/</span> <span class="bu">len</span>(y_true) <span class="cf">if</span> normalize <span class="cf">else</span> total</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Theoretical cost-optimal threshold: p* = 0.1667</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="solution-1-decision-threshold-tuning" class="level2">
+<h2 class="anchored" data-anchor-id="solution-1-decision-threshold-tuning">7.3 Solution 1: Decision Threshold Tuning</h2>
+<p>The LDA model already yields calibrated probabilities (AUC 0.74). Instead of always predicting the class with the highest probability, we apply a custom threshold derived from the cost matrix.</p>
+<section id="threshold-sweep" class="level3">
+<h3 class="anchored" data-anchor-id="threshold-sweep">Threshold sweep</h3>
+<div id="5913ff12" class="cell" data-execution_count="24">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>thresholds <span class="op">=</span> np.arange(<span class="fl">0.05</span>, <span class="fl">0.70</span>, <span class="fl">0.025</span>)</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>rows_thresh <span class="op">=</span> []</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t <span class="kw">in</span> thresholds:</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    y_pred_t <span class="op">=</span> (y_prob_lda <span class="op">&gt;=</span> t).astype(<span class="bu">int</span>)</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    rows_thresh.append({</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Threshold'</span>:          t,</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Accuracy'</span>:           accuracy_score(y_test, y_pred_t),</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Recall (Default)'</span>:   recall_score(y_test, y_pred_t, zero_division<span class="op">=</span><span class="dv">0</span>),</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Precision (Default)'</span>:precision_score(y_test, y_pred_t, zero_division<span class="op">=</span><span class="dv">0</span>),</span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">'F1 (Default)'</span>:       f1_score(y_test, y_pred_t, zero_division<span class="op">=</span><span class="dv">0</span>),</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Expected Cost'</span>:      expected_cost(y_test, y_pred_t, C),</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>thresh_df <span class="op">=</span> pd.DataFrame(rows_thresh)</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">5</span>))</span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> metric, color <span class="kw">in</span> [(<span class="st">'Recall (Default)'</span>, <span class="st">'tab:orange'</span>),</span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a>                       (<span class="st">'Precision (Default)'</span>, <span class="st">'tab:blue'</span>),</span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>                       (<span class="st">'F1 (Default)'</span>, <span class="st">'tab:green'</span>),</span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a>                       (<span class="st">'Accuracy'</span>, <span class="st">'tab:gray'</span>)]:</span>
+<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">0</span>].plot(thresh_df[<span class="st">'Threshold'</span>], thresh_df[metric], label<span class="op">=</span>metric, color<span class="op">=</span>color)</span>
+<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].axvline(p_star, color<span class="op">=</span><span class="st">'red'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, label<span class="op">=</span><span class="ss">f'p* = </span><span class="sc">{</span>p_star<span class="sc">:.2f}</span><span class="ss">'</span>)</span>
+<span id="cb35-25"><a href="#cb35-25" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'LDA: Metrics vs Decision Threshold'</span>)</span>
+<span id="cb35-26"><a href="#cb35-26" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">'Threshold'</span>)</span>
+<span id="cb35-27"><a href="#cb35-27" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].legend(fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb35-28"><a href="#cb35-28" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb35-29"><a href="#cb35-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-30"><a href="#cb35-30" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot(thresh_df[<span class="st">'Threshold'</span>], thresh_df[<span class="st">'Expected Cost'</span>], color<span class="op">=</span><span class="st">'crimson'</span>)</span>
+<span id="cb35-31"><a href="#cb35-31" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axvline(p_star, color<span class="op">=</span><span class="st">'red'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, label<span class="op">=</span><span class="ss">f'p* = </span><span class="sc">{</span>p_star<span class="sc">:.2f}</span><span class="ss">'</span>)</span>
+<span id="cb35-32"><a href="#cb35-32" aria-hidden="true" tabindex="-1"></a>opt_idx <span class="op">=</span> thresh_df[<span class="st">'Expected Cost'</span>].idxmin()</span>
+<span id="cb35-33"><a href="#cb35-33" aria-hidden="true" tabindex="-1"></a>opt_t   <span class="op">=</span> thresh_df.loc[opt_idx, <span class="st">'Threshold'</span>]</span>
+<span id="cb35-34"><a href="#cb35-34" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axvline(opt_t, color<span class="op">=</span><span class="st">'navy'</span>, linestyle<span class="op">=</span><span class="st">':'</span>, label<span class="op">=</span><span class="ss">f'Grid optimum = </span><span class="sc">{</span>opt_t<span class="sc">:.3f}</span><span class="ss">'</span>)</span>
+<span id="cb35-35"><a href="#cb35-35" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'LDA: Expected Cost vs Threshold'</span>)</span>
+<span id="cb35-36"><a href="#cb35-36" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">'Threshold'</span>)</span>
+<span id="cb35-37"><a href="#cb35-37" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].legend(fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb35-38"><a href="#cb35-38" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb35-39"><a href="#cb35-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-40"><a href="#cb35-40" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb35-41"><a href="#cb35-41" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb35-42"><a href="#cb35-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-43"><a href="#cb35-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Grid cost-optimal threshold : </span><span class="sc">{</span>opt_t<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb35-44"><a href="#cb35-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Theoretical threshold       : </span><span class="sc">{</span>p_star<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="first_project_files/figure-html/cell-25-output-1.png" width="1333" height="468" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Grid cost-optimal threshold : 0.200
+Theoretical threshold       : 0.167</code></pre>
+</div>
+</div>
+</section>
+<section id="performance-at-the-cost-optimal-threshold" class="level3">
+<h3 class="anchored" data-anchor-id="performance-at-the-cost-optimal-threshold">Performance at the cost-optimal threshold</h3>
+<div id="e368c26b" class="cell" data-execution_count="25">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>y_pred_lda_tuned <span class="op">=</span> (y_prob_lda <span class="op">&gt;=</span> opt_t).astype(<span class="bu">int</span>)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"=== LDA at threshold = </span><span class="sc">{</span>opt_t<span class="sc">:.3f}</span><span class="ss"> ==="</span>)</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(classification_report(y_test, y_pred_lda_tuned,</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>                             target_names<span class="op">=</span>[<span class="st">'No Default'</span>, <span class="st">'Default'</span>]))</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Expected cost : </span><span class="sc">{</span>expected_cost(y_test, y_pred_lda_tuned, C)<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Expected cost at default threshold (0.50): "</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"</span><span class="sc">{</span>expected_cost(y_test, y_pred_lda, C)<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">4</span>))</span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_lda),</span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>                       display_labels<span class="op">=</span>[<span class="st">'No Default'</span>, <span class="st">'Default'</span>]).plot(</span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span>axes[<span class="dv">0</span>], colorbar<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'LDA: Default threshold (0.50)'</span>)</span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_lda_tuned),</span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>                       display_labels<span class="op">=</span>[<span class="st">'No Default'</span>, <span class="st">'Default'</span>]).plot(</span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span>axes[<span class="dv">1</span>], colorbar<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="ss">f'LDA: Cost-optimal threshold (</span><span class="sc">{</span>opt_t<span class="sc">:.3f}</span><span class="ss">)'</span>)</span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== LDA at threshold = 0.200 ===
+              precision    recall  f1-score   support
+
+  No Default       0.88      0.75      0.81      7009
+     Default       0.42      0.63      0.50      1991
+
+    accuracy                           0.72      9000
+   macro avg       0.65      0.69      0.66      9000
+weighted avg       0.78      0.72      0.74      9000
+
+Expected cost : 0.5990
+Expected cost at default threshold (0.50): 0.8397</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="first_project_files/figure-html/cell-26-output-2.png" width="952" height="372" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretation:</strong> Lowering the threshold from 0.50 to the grid-optimal <strong>0.200</strong> (close to the theoretical <span class="math inline">\(p^* = 0.167\)</span>) raises default recall from <strong>27 % to 63 %</strong> and F1 from 0.38 to <strong>0.50</strong>, at the cost of dropping overall accuracy from 81 % to 72 % and precision on defaults from 0.65 to 0.42. The expected cost falls from <strong>0.840 to 0.599</strong> because each missed defaulter carries a 5× penalty. The grid optimum sits slightly above the theoretical threshold, reflecting the fact that the LDA probabilities are not perfectly calibrated; in practice the two values are close enough that the theoretical formula provides a reliable starting point.</p>
+<hr>
+</section>
+</section>
+<section id="solution-2-adjusted-class-prior-lda" class="level2">
+<h2 class="anchored" data-anchor-id="solution-2-adjusted-class-prior-lda">7.4 Solution 2: Adjusted Class Prior (LDA)</h2>
+<p>A cleaner, model-level intervention: refit LDA with balanced priors <span class="math inline">\(\pi_0 = \pi_1 = 0.5\)</span> instead of the empirical 78 / 22 split. This shifts the decision boundary toward the majority class, raising default recall without touching the threshold.</p>
+<div id="765d74a2" class="cell" data-execution_count="26">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Empirical (default) priors</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>lda_emp <span class="op">=</span> LinearDiscriminantAnalysis(priors<span class="op">=</span><span class="va">None</span>)</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>lda_emp.fit(X_train_scaled, y_train)</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Balanced priors</span></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>lda_bal <span class="op">=</span> LinearDiscriminantAnalysis(priors<span class="op">=</span>[<span class="fl">0.5</span>, <span class="fl">0.5</span>])</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>lda_bal.fit(X_train_scaled, y_train)</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Inverse-frequency priors</span></span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>n0 <span class="op">=</span> (y_train <span class="op">==</span> <span class="dv">0</span>).<span class="bu">sum</span>()</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>n1 <span class="op">=</span> (y_train <span class="op">==</span> <span class="dv">1</span>).<span class="bu">sum</span>()</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>pi0 <span class="op">=</span> n1 <span class="op">/</span> (n0 <span class="op">+</span> n1)   <span class="co"># give majority class the minority weight</span></span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>pi1 <span class="op">=</span> n0 <span class="op">/</span> (n0 <span class="op">+</span> n1)</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>lda_inv <span class="op">=</span> LinearDiscriminantAnalysis(priors<span class="op">=</span>[pi0, pi1])</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a>lda_inv.fit(X_train_scaled, y_train)</span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a>prior_rows <span class="op">=</span> []</span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, model <span class="kw">in</span> [(<span class="st">'LDA (empirical priors)'</span>, lda_emp),</span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>                     (<span class="st">'LDA (balanced priors)'</span>,  lda_bal),</span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>                     (<span class="st">'LDA (inverse-freq priors)'</span>, lda_inv)]:</span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>    yp <span class="op">=</span> model.predict(X_test_scaled)</span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>    prior_rows.append({</span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Model'</span>:              name,</span>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Accuracy'</span>:           accuracy_score(y_test, yp),</span>
+<span id="cb39-25"><a href="#cb39-25" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Precision'</span>:          precision_score(y_test, yp),</span>
+<span id="cb39-26"><a href="#cb39-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Recall (Default)'</span>:   recall_score(y_test, yp),</span>
+<span id="cb39-27"><a href="#cb39-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">'F1 (Default)'</span>:       f1_score(y_test, yp),</span>
+<span id="cb39-28"><a href="#cb39-28" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Expected Cost'</span>:      expected_cost(y_test, yp, C),</span>
+<span id="cb39-29"><a href="#cb39-29" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb39-30"><a href="#cb39-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-31"><a href="#cb39-31" aria-hidden="true" tabindex="-1"></a>prior_df <span class="op">=</span> pd.DataFrame(prior_rows).set_index(<span class="st">'Model'</span>).<span class="bu">round</span>(<span class="dv">4</span>)</span>
+<span id="cb39-32"><a href="#cb39-32" aria-hidden="true" tabindex="-1"></a>display(prior_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Accuracy</th>
+<th data-quarto-table-cell-role="th">Precision</th>
+<th data-quarto-table-cell-role="th">Recall (Default)</th>
+<th data-quarto-table-cell-role="th">F1 (Default)</th>
+<th data-quarto-table-cell-role="th">Expected Cost</th>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">Model</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">LDA (empirical priors)</th>
+<td>0.8066</td>
+<td>0.6517</td>
+<td>0.2697</td>
+<td>0.3815</td>
+<td>0.8397</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">LDA (balanced priors)</th>
+<td>0.7507</td>
+<td>0.4523</td>
+<td>0.6022</td>
+<td>0.5166</td>
+<td>0.6013</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">LDA (inverse-freq priors)</th>
+<td>0.3312</td>
+<td>0.2422</td>
+<td>0.9503</td>
+<td>0.3860</td>
+<td>0.7128</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p><strong>Interpretation:</strong> Balanced priors (0.5/0.5) shift the LDA boundary so that more borderline clients are flagged as defaulters: recall jumps from 27 % to <strong>60 %</strong> and expected cost drops from 0.840 to <strong>0.601</strong>. Inverse-frequency priors (which assign the minority-class weight to the majority class) push the boundary even further, achieving 95 % recall, but at the cost of catastrophically low precision (0.24) and very poor overall accuracy (33 %), resulting in a worse expected cost of 0.713. For this dataset, <strong>balanced priors offer the best trade-off among prior-adjustment strategies</strong>, achieving a higher F1 (0.517 vs 0.386 for inverse-frequency) and lower expected cost.</p>
+<hr>
+</section>
+<section id="solution-3-resampling" class="level2">
+<h2 class="anchored" data-anchor-id="solution-3-resampling">7.5 Solution 3: Resampling</h2>
+<p>Data-level strategies modify the training set rather than the model. We compare three approaches and evaluate each at the default 0.5 threshold and at the cost-optimal threshold.</p>
+<section id="strategies" class="level3">
+<h3 class="anchored" data-anchor-id="strategies">Strategies</h3>
+<div id="fe915a5d" class="cell" data-execution_count="27">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.utils <span class="im">import</span> resample</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Random undersampling ---</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>X_tr_np <span class="op">=</span> X_train_scaled.values</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>y_tr_np  <span class="op">=</span> y_train.values</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>mask_maj <span class="op">=</span> y_tr_np <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>mask_min <span class="op">=</span> y_tr_np <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>n_min <span class="op">=</span> mask_min.<span class="bu">sum</span>()</span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>X_maj_down, y_maj_down <span class="op">=</span> resample(</span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>    X_tr_np[mask_maj], y_tr_np[mask_maj],</span>
+<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a>    replace<span class="op">=</span><span class="va">False</span>, n_samples<span class="op">=</span>n_min, random_state<span class="op">=</span><span class="dv">42</span></span>
+<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a>X_down <span class="op">=</span> np.vstack([X_maj_down, X_tr_np[mask_min]])</span>
+<span id="cb40-16"><a href="#cb40-16" aria-hidden="true" tabindex="-1"></a>y_down <span class="op">=</span> np.concatenate([y_maj_down, y_tr_np[mask_min]])</span>
+<span id="cb40-17"><a href="#cb40-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-18"><a href="#cb40-18" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Random oversampling ---</span></span>
+<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a>X_min_up, y_min_up <span class="op">=</span> resample(</span>
+<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a>    X_tr_np[mask_min], y_tr_np[mask_min],</span>
+<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a>    replace<span class="op">=</span><span class="va">True</span>, n_samples<span class="op">=</span>mask_maj.<span class="bu">sum</span>(), random_state<span class="op">=</span><span class="dv">42</span></span>
+<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb40-23"><a href="#cb40-23" aria-hidden="true" tabindex="-1"></a>X_up <span class="op">=</span> np.vstack([X_tr_np[mask_maj], X_min_up])</span>
+<span id="cb40-24"><a href="#cb40-24" aria-hidden="true" tabindex="-1"></a>y_up <span class="op">=</span> np.concatenate([y_tr_np[mask_maj], y_min_up])</span>
+<span id="cb40-25"><a href="#cb40-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-26"><a href="#cb40-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Original training set     : </span><span class="sc">{</span>y_tr_np<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">}</span><span class="ss"> rows  "</span></span>
+<span id="cb40-27"><a href="#cb40-27" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(default rate = </span><span class="sc">{</span>y_tr_np<span class="sc">.</span>mean()<span class="sc">:.3f}</span><span class="ss">)"</span>)</span>
+<span id="cb40-28"><a href="#cb40-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Undersampled training set : </span><span class="sc">{</span>y_down<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">}</span><span class="ss"> rows  "</span></span>
+<span id="cb40-29"><a href="#cb40-29" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(default rate = </span><span class="sc">{</span>y_down<span class="sc">.</span>mean()<span class="sc">:.3f}</span><span class="ss">)"</span>)</span>
+<span id="cb40-30"><a href="#cb40-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Oversampled training set  : </span><span class="sc">{</span>y_up<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">}</span><span class="ss"> rows   "</span></span>
+<span id="cb40-31"><a href="#cb40-31" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(default rate = </span><span class="sc">{</span>y_up<span class="sc">.</span>mean()<span class="sc">:.3f}</span><span class="ss">)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Original training set     : 21000 rows  (default rate = 0.221)
+Undersampled training set : 9290 rows  (default rate = 0.500)
+Oversampled training set  : 32710 rows   (default rate = 0.500)</code></pre>
+</div>
+</div>
+<div id="c15f3380" class="cell" data-execution_count="28">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit LDA on each training set</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>lda_orig <span class="op">=</span> LinearDiscriminantAnalysis()</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>lda_orig.fit(X_tr_np, y_tr_np)</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>lda_down <span class="op">=</span> LinearDiscriminantAnalysis()</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>lda_down.fit(X_down, y_down)</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>lda_up <span class="op">=</span> LinearDiscriminantAnalysis()</span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>lda_up.fit(X_up, y_up)</span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>X_te_np <span class="op">=</span> X_test_scaled.values</span>
+<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>y_te_np <span class="op">=</span> y_test.values</span>
+<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a>resample_rows <span class="op">=</span> []</span>
+<span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, model <span class="kw">in</span> [(<span class="st">'Original (no resampling)'</span>, lda_orig),</span>
+<span id="cb42-16"><a href="#cb42-16" aria-hidden="true" tabindex="-1"></a>                     (<span class="st">'Random undersampling'</span>,     lda_down),</span>
+<span id="cb42-17"><a href="#cb42-17" aria-hidden="true" tabindex="-1"></a>                     (<span class="st">'Random oversampling'</span>,      lda_up)]:</span>
+<span id="cb42-18"><a href="#cb42-18" aria-hidden="true" tabindex="-1"></a>    prob <span class="op">=</span> model.predict_proba(X_te_np)[:, <span class="dv">1</span>]</span>
+<span id="cb42-19"><a href="#cb42-19" aria-hidden="true" tabindex="-1"></a>    yp_50  <span class="op">=</span> (prob <span class="op">&gt;=</span> <span class="fl">0.50</span>).astype(<span class="bu">int</span>)</span>
+<span id="cb42-20"><a href="#cb42-20" aria-hidden="true" tabindex="-1"></a>    yp_opt <span class="op">=</span> (prob <span class="op">&gt;=</span> opt_t).astype(<span class="bu">int</span>)</span>
+<span id="cb42-21"><a href="#cb42-21" aria-hidden="true" tabindex="-1"></a>    resample_rows.append({</span>
+<span id="cb42-22"><a href="#cb42-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Strategy'</span>:                  name,</span>
+<span id="cb42-23"><a href="#cb42-23" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Recall@0.5'</span>:                recall_score(y_te_np, yp_50),</span>
+<span id="cb42-24"><a href="#cb42-24" aria-hidden="true" tabindex="-1"></a>        <span class="st">'F1@0.5'</span>:                    f1_score(y_te_np, yp_50),</span>
+<span id="cb42-25"><a href="#cb42-25" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Expected Cost@0.5'</span>:         expected_cost(y_te_np, yp_50, C),</span>
+<span id="cb42-26"><a href="#cb42-26" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f'Recall@</span><span class="sc">{</span>opt_t<span class="sc">:.2f}</span><span class="ss">'</span>:       recall_score(y_te_np, yp_opt),</span>
+<span id="cb42-27"><a href="#cb42-27" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f'F1@</span><span class="sc">{</span>opt_t<span class="sc">:.2f}</span><span class="ss">'</span>:           f1_score(y_te_np, yp_opt),</span>
+<span id="cb42-28"><a href="#cb42-28" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f'Expected Cost@</span><span class="sc">{</span>opt_t<span class="sc">:.2f}</span><span class="ss">'</span>:expected_cost(y_te_np, yp_opt, C),</span>
+<span id="cb42-29"><a href="#cb42-29" aria-hidden="true" tabindex="-1"></a>        <span class="st">'ROC-AUC'</span>:                   roc_auc_score(y_te_np, prob),</span>
+<span id="cb42-30"><a href="#cb42-30" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb42-31"><a href="#cb42-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-32"><a href="#cb42-32" aria-hidden="true" tabindex="-1"></a>resample_df <span class="op">=</span> pd.DataFrame(resample_rows).set_index(<span class="st">'Strategy'</span>).<span class="bu">round</span>(<span class="dv">4</span>)</span>
+<span id="cb42-33"><a href="#cb42-33" aria-hidden="true" tabindex="-1"></a>display(resample_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Recall@0.5</th>
+<th data-quarto-table-cell-role="th">F1@0.5</th>
+<th data-quarto-table-cell-role="th">Expected Cost@0.5</th>
+<th data-quarto-table-cell-role="th">Recall@0.20</th>
+<th data-quarto-table-cell-role="th">F1@0.20</th>
+<th data-quarto-table-cell-role="th">Expected Cost@0.20</th>
+<th data-quarto-table-cell-role="th">ROC-AUC</th>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">Strategy</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">Original (no resampling)</th>
+<td>0.2697</td>
+<td>0.3815</td>
+<td>0.8397</td>
+<td>0.6339</td>
+<td>0.5049</td>
+<td>0.5990</td>
+<td>0.7401</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">Random undersampling</th>
+<td>0.6123</td>
+<td>0.5010</td>
+<td>0.6129</td>
+<td>0.9794</td>
+<td>0.3777</td>
+<td>0.7321</td>
+<td>0.7421</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">Random oversampling</th>
+<td>0.6057</td>
+<td>0.5065</td>
+<td>0.6100</td>
+<td>0.9784</td>
+<td>0.3784</td>
+<td>0.7303</td>
+<td>0.7411</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="confusion-matrices-at-threshold-0.5" class="level3">
+<h3 class="anchored" data-anchor-id="confusion-matrices-at-threshold-0.5">Confusion matrices at threshold 0.5</h3>
+<div id="a8301fee" class="cell" data-execution_count="29">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">15</span>, <span class="dv">4</span>))</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> [<span class="st">'No Default'</span>, <span class="st">'Default'</span>]</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, (name, model) <span class="kw">in</span> <span class="bu">zip</span>(axes, [</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'Original'</span>,     lda_orig),</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'Undersampled'</span>, lda_down),</span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'Oversampled'</span>,  lda_up)]):</span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>    yp <span class="op">=</span> model.predict(X_te_np)</span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>    ConfusionMatrixDisplay(confusion_matrix(y_te_np, yp),</span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>                           display_labels<span class="op">=</span>labels).plot(ax<span class="op">=</span>ax, colorbar<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f'LDA: </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="first_project_files/figure-html/cell-30-output-1.png" width="1350" height="372" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretation:</strong></p>
+<ul>
+<li><strong>Undersampling</strong> reduces the training set from 21 000 to <strong>9 290 rows</strong> (50/50 balance by discarding majority-class observations). At threshold 0.5 it more than doubles default recall (27 % → <strong>61 %</strong>) and cuts expected cost from 0.840 to <strong>0.613</strong>. However, at the cost-optimal threshold 0.20 it pushes recall to 98 % with a precision collapse to 0.19, raising expected cost back to 0.732.</li>
+<li><strong>Oversampling</strong> repeats minority-class rows to reach <strong>32 710 training rows</strong> (50/50). Results at threshold 0.5 are nearly identical to undersampling (recall 61 %, expected cost 0.610), confirming both strategies impose a similar effective prior shift. Oversampling preserves all original majority-class information, giving it a marginally higher AUC (0.741 vs 0.742) but no practical difference at this scale.</li>
+<li>Both resampling strategies improve expected cost at threshold 0.5 over the imbalanced baseline. When combined with the cost-optimal threshold (0.20), however, neither beats plain LDA with threshold tuning or balanced priors, so the extreme recall gain (∼98 %) destroys precision and inflates cost.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="overall-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="overall-comparison">7.6 Overall Comparison</h2>
+<div id="fc7bf158" class="cell" data-execution_count="30">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>all_rows <span class="op">=</span> []</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>configs <span class="op">=</span> [</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'LDA: default threshold (0.50)'</span>,       y_pred_lda,        y_prob_lda),</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>    (<span class="ss">f'LDA: cost threshold (</span><span class="sc">{</span>opt_t<span class="sc">:.2f}</span><span class="ss">)'</span>,  y_pred_lda_tuned,  y_prob_lda),</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'LDA: balanced priors (0.5/0.5)'</span>,      lda_bal.predict(X_test_scaled), </span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>                                              lda_bal.predict_proba(X_test_scaled)[:, <span class="dv">1</span>]),</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'LDA: oversample train'</span>,               (lda_up.predict_proba(X_te_np)[:, <span class="dv">1</span>] <span class="op">&gt;=</span> <span class="fl">0.5</span>).astype(<span class="bu">int</span>),</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>                                              lda_up.predict_proba(X_te_np)[:, <span class="dv">1</span>]),</span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'GNB: default threshold (0.50)'</span>,       y_pred_gnb,        y_prob_gnb),</span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>    (<span class="ss">f'GNB: cost threshold (</span><span class="sc">{</span>opt_t<span class="sc">:.2f}</span><span class="ss">)'</span>,  (y_prob_gnb <span class="op">&gt;=</span> opt_t).astype(<span class="bu">int</span>), y_prob_gnb),</span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, yp, yprob <span class="kw">in</span> configs:</span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>    all_rows.append({</span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Configuration'</span>:      name,</span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Accuracy'</span>:           accuracy_score(y_test, yp),</span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Recall (Default)'</span>:   recall_score(y_test, yp),</span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Precision (Default)'</span>:precision_score(y_test, yp, zero_division<span class="op">=</span><span class="dv">0</span>),</span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">'F1 (Default)'</span>:       f1_score(y_test, yp),</span>
+<span id="cb44-21"><a href="#cb44-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">'ROC-AUC'</span>:            roc_auc_score(y_test, yprob),</span>
+<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Expected Cost'</span>:      expected_cost(y_test, yp, C),</span>
+<span id="cb44-23"><a href="#cb44-23" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb44-24"><a href="#cb44-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-25"><a href="#cb44-25" aria-hidden="true" tabindex="-1"></a>final_df <span class="op">=</span> pd.DataFrame(all_rows).set_index(<span class="st">'Configuration'</span>).<span class="bu">round</span>(<span class="dv">4</span>)</span>
+<span id="cb44-26"><a href="#cb44-26" aria-hidden="true" tabindex="-1"></a>display(final_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Accuracy</th>
+<th data-quarto-table-cell-role="th">Recall (Default)</th>
+<th data-quarto-table-cell-role="th">Precision (Default)</th>
+<th data-quarto-table-cell-role="th">F1 (Default)</th>
+<th data-quarto-table-cell-role="th">ROC-AUC</th>
+<th data-quarto-table-cell-role="th">Expected Cost</th>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">Configuration</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">LDA: default threshold (0.50)</th>
+<td>0.8066</td>
+<td>0.2697</td>
+<td>0.6517</td>
+<td>0.3815</td>
+<td>0.7401</td>
+<td>0.8397</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">LDA: cost threshold (0.20)</th>
+<td>0.7250</td>
+<td>0.6339</td>
+<td>0.4195</td>
+<td>0.5049</td>
+<td>0.7401</td>
+<td>0.5990</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">LDA: balanced priors (0.5/0.5)</th>
+<td>0.7507</td>
+<td>0.6022</td>
+<td>0.4523</td>
+<td>0.5166</td>
+<td>0.7401</td>
+<td>0.6013</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">LDA: oversample train</th>
+<td>0.7389</td>
+<td>0.6057</td>
+<td>0.4352</td>
+<td>0.5065</td>
+<td>0.7411</td>
+<td>0.6100</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">GNB: default threshold (0.50)</th>
+<td>0.7637</td>
+<td>0.5113</td>
+<td>0.4687</td>
+<td>0.4891</td>
+<td>0.7396</td>
+<td>0.6688</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">GNB: cost threshold (0.20)</th>
+<td>0.7279</td>
+<td>0.5881</td>
+<td>0.4182</td>
+<td>0.4888</td>
+<td>0.7396</td>
+<td>0.6366</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<section id="key-takeaways" class="level3">
+<h3 class="anchored" data-anchor-id="key-takeaways">Key takeaways</h3>
+<ul>
+<li><strong>Threshold tuning is the highest-leverage, zero-retraining intervention</strong>: shifting LDA’s threshold from 0.50 to <strong>0.200</strong> (grid-optimal; theoretical <span class="math inline">\(p^* = 0.167\)</span>) raises default recall from 27 % to <strong>63 %</strong>, F1 from 0.38 to <strong>0.50</strong>, and delivers the <strong>lowest expected cost of 0.599</strong> across all configurations tested.</li>
+<li><strong>Balanced priors</strong> are the best single model-level fix: one parameter change raises recall to <strong>60 %</strong> and F1 to <strong>0.517</strong> (the highest of any configuration) with expected cost of 0.601, which is essentially tied with threshold tuning, and more principled theoretically.</li>
+<li><strong>Resampling at threshold 0.5</strong> brings comparable gains to balanced priors (recall ~61 %, expected cost ~0.61), but combining resampling with the cost-optimal threshold backfires: the model overshoots to ∼98 % recall with precision of 0.19, worsening expected cost to 0.73.</li>
+<li><strong>GNB with cost threshold (0.20)</strong> achieves a recall of <strong>59 %</strong> and expected cost of <strong>0.637</strong>, but consistently behind the best LDA variants. GNB’s miscalibrated probabilities make threshold selection less precise.</li>
+<li><strong>ROC-AUC is invariant across all interventions</strong> (all LDA variants: 0.740–0.741): every strategy here improves decision rules without changing the underlying ranking ability of the model.</li>
+<li>The expected-cost framework makes the business trade-off explicit and portable. With a 5:1 FN/FP cost ratio the optimal threshold is 0.167; a bank with a different loss estimate simply updates <span class="math inline">\(c_{FN}\)</span> and recomputes <span class="math inline">\(p^* = c_{FP}/(c_{FP}+c_{FN})\)</span>.</li>
+</ul>
+</section>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

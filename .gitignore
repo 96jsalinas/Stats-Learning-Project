@@ -24,7 +24,6 @@ default_credit_card_clients.xlsx
 
 # Ignore generated output (only track the source .qmd files)
 # If you WANT to share the HTML on GitHub, remove the *.html line below
-*.html
 *.pdf
 *.docx
 

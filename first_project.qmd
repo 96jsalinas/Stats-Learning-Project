@@ -565,5 +565,343 @@ display(summary_df)
 
 * **LDA** achieves the highest overall accuracy (81 %) and highest ROC-AUC (0.74), making it the best ranking model. Its weakness is the very low recall on defaulters (27 %): it is a conservative model that only flags cases it is highly confident about, producing a precision of 0.65 on the default class.
 * **QDA** has the lowest accuracy (75 %) and lowest AUC (0.72), but nearly doubles LDA's recall on defaults (49 %). The extra covariance flexibility partially captures the different spending volatility between the two classes, though multicollinearity in the bill features caps the gains.
-* **Gaussian Naïve Bayes** strikes the best minority-class balance: highest default recall (51 %), best default F1 (0.49), and an AUC (0.74) that matches LDA — all despite the grossly violated independence assumption. It is the best choice when catching defaulters matters more than precision, provided the output probabilities are recalibrated before use.
+* **Gaussian Naïve Bayes** strikes the best minority-class balance: highest default recall (51 %), best default F1 (0.49), and an AUC (0.74) that matches LDA. It is the best choice when catching defaulters matters more than precision, provided the output probabilities are recalibrated before use.
 * The core issue of all three models is the **precision–recall trade-off on the minority class**, none reaches a default F1 above 0.49.
+
+---
+
+# 7. Cost-Sensitive Learning
+
+## 7.1 The Cost of Ignoring Imbalance
+
+The dataset has a 22 % default rate , predicting "no default" for every observation would yield 78 % accuracy yet catch zero defaulters. More importantly, **the two types of error are not equally costly** in credit risk:
+
+* **False Negative** (missing a defaulter): the bank extends credit it will not recover, high financial loss.
+* **False Positive** (flagging a good client): a brief manual review is triggered, low administrative cost.
+
+This asymmetry must be encoded explicitly rather than left to the default 0.5 threshold.
+
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import (
+    confusion_matrix, ConfusionMatrixDisplay,
+    classification_report, roc_auc_score,
+    precision_score, recall_score, f1_score, accuracy_score
+)
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.naive_bayes import GaussianNB
+
+# Naive baseline: always predict majority class
+y_always_no_default = np.zeros(len(y_test), dtype=int)
+print("Naive 'always No-Default' baseline")
+print(classification_report(y_test, y_always_no_default,
+                             target_names=['No Default', 'Default']))
+```
+
+---
+
+## 7.2 Defining a Cost Matrix
+
+We assign costs reflecting the business reality of a credit card issuer.
+
+| | **Predicted: No Default** | **Predicted: Default** |
+|---|---|---|
+| **Actual: No Default** | 0 (TN) | 1 (FP unnecessary review) |
+| **Actual: Default** | 5 (FN unrecovered credit) | 0 (TP) |
+
+A missed defaulter costs **5×** more than a false alarm. This yields the theoretical optimal threshold:
+
+$$p^* = \frac{c_{FP}}{c_{FP} + c_{FN}} = \frac{1}{1 + 5} \approx 0.167$$
+
+Any client whose predicted default probability exceeds 0.167 should be classified as a defaulter.
+
+```{python}
+# Cost matrix: rows = actual, cols = predicted
+#              No Default  Default
+C = np.array([[0,          1],    # Actual: No Default
+              [5,          0]])   # Actual: Default
+
+c_fp = C[0, 1]   # FP cost
+c_fn = C[1, 0]   # FN cost
+p_star = c_fp / (c_fp + c_fn)
+print(f"Theoretical cost-optimal threshold: p* = {p_star:.4f}")
+
+def expected_cost(y_true, y_pred, cost_matrix, normalize=True):
+    cm = confusion_matrix(y_true, y_pred)
+    total = np.sum(cm * cost_matrix)
+    return total / len(y_true) if normalize else total
+```
+
+---
+
+## 7.3 Solution 1: Decision Threshold Tuning
+
+The LDA model already yields calibrated probabilities (AUC 0.74). Instead of always predicting the class with the highest probability, we apply a custom threshold derived from the cost matrix.
+
+### Threshold sweep
+
+```{python}
+thresholds = np.arange(0.05, 0.70, 0.025)
+rows_thresh = []
+
+for t in thresholds:
+    y_pred_t = (y_prob_lda >= t).astype(int)
+    rows_thresh.append({
+        'Threshold':          t,
+        'Accuracy':           accuracy_score(y_test, y_pred_t),
+        'Recall (Default)':   recall_score(y_test, y_pred_t, zero_division=0),
+        'Precision (Default)':precision_score(y_test, y_pred_t, zero_division=0),
+        'F1 (Default)':       f1_score(y_test, y_pred_t, zero_division=0),
+        'Expected Cost':      expected_cost(y_test, y_pred_t, C),
+    })
+
+thresh_df = pd.DataFrame(rows_thresh)
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+for metric, color in [('Recall (Default)', 'tab:orange'),
+                       ('Precision (Default)', 'tab:blue'),
+                       ('F1 (Default)', 'tab:green'),
+                       ('Accuracy', 'tab:gray')]:
+    axes[0].plot(thresh_df['Threshold'], thresh_df[metric], label=metric, color=color)
+axes[0].axvline(p_star, color='red', linestyle='--', label=f'p* = {p_star:.2f}')
+axes[0].set_title('LDA: Metrics vs Decision Threshold')
+axes[0].set_xlabel('Threshold')
+axes[0].legend(fontsize=8)
+axes[0].grid(True, alpha=0.3)
+
+axes[1].plot(thresh_df['Threshold'], thresh_df['Expected Cost'], color='crimson')
+axes[1].axvline(p_star, color='red', linestyle='--', label=f'p* = {p_star:.2f}')
+opt_idx = thresh_df['Expected Cost'].idxmin()
+opt_t   = thresh_df.loc[opt_idx, 'Threshold']
+axes[1].axvline(opt_t, color='navy', linestyle=':', label=f'Grid optimum = {opt_t:.3f}')
+axes[1].set_title('LDA: Expected Cost vs Threshold')
+axes[1].set_xlabel('Threshold')
+axes[1].legend(fontsize=8)
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print(f"Grid cost-optimal threshold : {opt_t:.3f}")
+print(f"Theoretical threshold       : {p_star:.3f}")
+```
+
+### Performance at the cost-optimal threshold
+
+```{python}
+y_pred_lda_tuned = (y_prob_lda >= opt_t).astype(int)
+
+print(f"=== LDA at threshold = {opt_t:.3f} ===")
+print(classification_report(y_test, y_pred_lda_tuned,
+                             target_names=['No Default', 'Default']))
+print(f"Expected cost : {expected_cost(y_test, y_pred_lda_tuned, C):.4f}")
+print(f"Expected cost at default threshold (0.50): "
+      f"{expected_cost(y_test, y_pred_lda, C):.4f}")
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_lda),
+                       display_labels=['No Default', 'Default']).plot(
+    ax=axes[0], colorbar=False)
+axes[0].set_title('LDA: Default threshold (0.50)')
+
+ConfusionMatrixDisplay(confusion_matrix(y_test, y_pred_lda_tuned),
+                       display_labels=['No Default', 'Default']).plot(
+    ax=axes[1], colorbar=False)
+axes[1].set_title(f'LDA: Cost-optimal threshold ({opt_t:.3f})')
+plt.tight_layout()
+plt.show()
+```
+
+**Interpretation:** Lowering the threshold from 0.50 to the grid-optimal **0.200** (close to the theoretical $p^* = 0.167$) raises default recall from **27 % to 63 %** and F1 from 0.38 to **0.50**, at the cost of dropping overall accuracy from 81 % to 72 % and precision on defaults from 0.65 to 0.42. The expected cost falls from **0.840 to 0.599** because each missed defaulter carries a 5× penalty. The grid optimum sits slightly above the theoretical threshold, reflecting the fact that the LDA probabilities are not perfectly calibrated; in practice the two values are close enough that the theoretical formula provides a reliable starting point.
+
+---
+
+## 7.4 Solution 2: Adjusted Class Prior (LDA)
+
+A cleaner, model-level intervention: refit LDA with balanced priors $\pi_0 = \pi_1 = 0.5$ instead of the empirical 78 / 22 split. This shifts the decision boundary toward the majority class, raising default recall without touching the threshold.
+
+```{python}
+# Empirical (default) priors
+lda_emp = LinearDiscriminantAnalysis(priors=None)
+lda_emp.fit(X_train_scaled, y_train)
+
+# Balanced priors
+lda_bal = LinearDiscriminantAnalysis(priors=[0.5, 0.5])
+lda_bal.fit(X_train_scaled, y_train)
+
+# Inverse-frequency priors
+n0 = (y_train == 0).sum()
+n1 = (y_train == 1).sum()
+pi0 = n1 / (n0 + n1)   # give majority class the minority weight
+pi1 = n0 / (n0 + n1)
+lda_inv = LinearDiscriminantAnalysis(priors=[pi0, pi1])
+lda_inv.fit(X_train_scaled, y_train)
+
+prior_rows = []
+for name, model in [('LDA (empirical priors)', lda_emp),
+                     ('LDA (balanced priors)',  lda_bal),
+                     ('LDA (inverse-freq priors)', lda_inv)]:
+    yp = model.predict(X_test_scaled)
+    prior_rows.append({
+        'Model':              name,
+        'Accuracy':           accuracy_score(y_test, yp),
+        'Precision':          precision_score(y_test, yp),
+        'Recall (Default)':   recall_score(y_test, yp),
+        'F1 (Default)':       f1_score(y_test, yp),
+        'Expected Cost':      expected_cost(y_test, yp, C),
+    })
+
+prior_df = pd.DataFrame(prior_rows).set_index('Model').round(4)
+display(prior_df)
+```
+
+**Interpretation:** Balanced priors (0.5/0.5) shift the LDA boundary so that more borderline clients are flagged as defaulters: recall jumps from 27 % to **60 %** and expected cost drops from 0.840 to **0.601**. Inverse-frequency priors (which assign the minority-class weight to the majority class) push the boundary even further, achieving 95 % recall, but at the cost of catastrophically low precision (0.24) and very poor overall accuracy (33 %), resulting in a worse expected cost of 0.713. For this dataset, **balanced priors offer the best trade-off among prior-adjustment strategies**, achieving a higher F1 (0.517 vs 0.386 for inverse-frequency) and lower expected cost.
+
+---
+
+## 7.5 Solution 3: Resampling
+
+Data-level strategies modify the training set rather than the model. We compare three approaches and evaluate each at the default 0.5 threshold and at the cost-optimal threshold.
+
+### Strategies
+
+```{python}
+from sklearn.utils import resample
+
+# --- Random undersampling ---
+X_tr_np = X_train_scaled.values
+y_tr_np  = y_train.values
+
+mask_maj = y_tr_np == 0
+mask_min = y_tr_np == 1
+n_min = mask_min.sum()
+
+X_maj_down, y_maj_down = resample(
+    X_tr_np[mask_maj], y_tr_np[mask_maj],
+    replace=False, n_samples=n_min, random_state=42
+)
+X_down = np.vstack([X_maj_down, X_tr_np[mask_min]])
+y_down = np.concatenate([y_maj_down, y_tr_np[mask_min]])
+
+# --- Random oversampling ---
+X_min_up, y_min_up = resample(
+    X_tr_np[mask_min], y_tr_np[mask_min],
+    replace=True, n_samples=mask_maj.sum(), random_state=42
+)
+X_up = np.vstack([X_tr_np[mask_maj], X_min_up])
+y_up = np.concatenate([y_tr_np[mask_maj], y_min_up])
+
+print(f"Original training set     : {y_tr_np.shape[0]} rows  "
+      f"(default rate = {y_tr_np.mean():.3f})")
+print(f"Undersampled training set : {y_down.shape[0]} rows  "
+      f"(default rate = {y_down.mean():.3f})")
+print(f"Oversampled training set  : {y_up.shape[0]} rows   "
+      f"(default rate = {y_up.mean():.3f})")
+```
+
+```{python}
+# Fit LDA on each training set
+lda_orig = LinearDiscriminantAnalysis()
+lda_orig.fit(X_tr_np, y_tr_np)
+
+lda_down = LinearDiscriminantAnalysis()
+lda_down.fit(X_down, y_down)
+
+lda_up = LinearDiscriminantAnalysis()
+lda_up.fit(X_up, y_up)
+
+X_te_np = X_test_scaled.values
+y_te_np = y_test.values
+
+resample_rows = []
+for name, model in [('Original (no resampling)', lda_orig),
+                     ('Random undersampling',     lda_down),
+                     ('Random oversampling',      lda_up)]:
+    prob = model.predict_proba(X_te_np)[:, 1]
+    yp_50  = (prob >= 0.50).astype(int)
+    yp_opt = (prob >= opt_t).astype(int)
+    resample_rows.append({
+        'Strategy':                  name,
+        'Recall@0.5':                recall_score(y_te_np, yp_50),
+        'F1@0.5':                    f1_score(y_te_np, yp_50),
+        'Expected Cost@0.5':         expected_cost(y_te_np, yp_50, C),
+        f'Recall@{opt_t:.2f}':       recall_score(y_te_np, yp_opt),
+        f'F1@{opt_t:.2f}':           f1_score(y_te_np, yp_opt),
+        f'Expected Cost@{opt_t:.2f}':expected_cost(y_te_np, yp_opt, C),
+        'ROC-AUC':                   roc_auc_score(y_te_np, prob),
+    })
+
+resample_df = pd.DataFrame(resample_rows).set_index('Strategy').round(4)
+display(resample_df)
+```
+
+### Confusion matrices at threshold 0.5
+
+```{python}
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+labels = ['No Default', 'Default']
+
+for ax, (name, model) in zip(axes, [
+        ('Original',     lda_orig),
+        ('Undersampled', lda_down),
+        ('Oversampled',  lda_up)]):
+    yp = model.predict(X_te_np)
+    ConfusionMatrixDisplay(confusion_matrix(y_te_np, yp),
+                           display_labels=labels).plot(ax=ax, colorbar=False)
+    ax.set_title(f'LDA: {name}')
+
+plt.tight_layout()
+plt.show()
+```
+
+**Interpretation:**
+
+* **Undersampling** reduces the training set from 21 000 to **9 290 rows** (50/50 balance by discarding majority-class observations). At threshold 0.5 it more than doubles default recall (27 % → **61 %**) and cuts expected cost from 0.840 to **0.613**. However, at the cost-optimal threshold 0.20 it pushes recall to 98 % with a precision collapse to 0.19, raising expected cost back to 0.732.
+* **Oversampling** repeats minority-class rows to reach **32 710 training rows** (50/50). Results at threshold 0.5 are nearly identical to undersampling (recall 61 %, expected cost 0.610), confirming both strategies impose a similar effective prior shift. Oversampling preserves all original majority-class information, giving it a marginally higher AUC (0.741 vs 0.742) but no practical difference at this scale.
+* Both resampling strategies improve expected cost at threshold 0.5 over the imbalanced baseline. When combined with the cost-optimal threshold (0.20), however, neither beats plain LDA with threshold tuning or balanced priors, so the extreme recall gain (∼98 %) destroys precision and inflates cost.
+
+---
+
+## 7.6 Overall Comparison
+
+```{python}
+all_rows = []
+
+configs = [
+    ('LDA: default threshold (0.50)',       y_pred_lda,        y_prob_lda),
+    (f'LDA: cost threshold ({opt_t:.2f})',  y_pred_lda_tuned,  y_prob_lda),
+    ('LDA: balanced priors (0.5/0.5)',      lda_bal.predict(X_test_scaled), 
+                                              lda_bal.predict_proba(X_test_scaled)[:, 1]),
+    ('LDA: oversample train',               (lda_up.predict_proba(X_te_np)[:, 1] >= 0.5).astype(int),
+                                              lda_up.predict_proba(X_te_np)[:, 1]),
+    ('GNB: default threshold (0.50)',       y_pred_gnb,        y_prob_gnb),
+    (f'GNB: cost threshold ({opt_t:.2f})',  (y_prob_gnb >= opt_t).astype(int), y_prob_gnb),
+]
+
+for name, yp, yprob in configs:
+    all_rows.append({
+        'Configuration':      name,
+        'Accuracy':           accuracy_score(y_test, yp),
+        'Recall (Default)':   recall_score(y_test, yp),
+        'Precision (Default)':precision_score(y_test, yp, zero_division=0),
+        'F1 (Default)':       f1_score(y_test, yp),
+        'ROC-AUC':            roc_auc_score(y_test, yprob),
+        'Expected Cost':      expected_cost(y_test, yp, C),
+    })
+
+final_df = pd.DataFrame(all_rows).set_index('Configuration').round(4)
+display(final_df)
+```
+
+### Key takeaways
+
+* **Threshold tuning is the highest-leverage, zero-retraining intervention**: shifting LDA's threshold from 0.50 to **0.200** (grid-optimal; theoretical $p^* = 0.167$) raises default recall from 27 % to **63 %**, F1 from 0.38 to **0.50**, and delivers the **lowest expected cost of 0.599** across all configurations tested.
+* **Balanced priors** are the best single model-level fix: one parameter change raises recall to **60 %** and F1 to **0.517** (the highest of any configuration) with expected cost of 0.601, which is essentially tied with threshold tuning, and more principled theoretically.
+* **Resampling at threshold 0.5** brings comparable gains to balanced priors (recall ~61 %, expected cost ~0.61), but combining resampling with the cost-optimal threshold backfires: the model overshoots to ∼98 % recall with precision of 0.19, worsening expected cost to 0.73.
+* **GNB with cost threshold (0.20)** achieves a recall of **59 %** and expected cost of **0.637**, but consistently behind the best LDA variants. GNB's miscalibrated probabilities make threshold selection less precise.
+* **ROC-AUC is invariant across all interventions** (all LDA variants: 0.740–0.741): every strategy here improves decision rules without changing the underlying ranking ability of the model.
+* The expected-cost framework makes the business trade-off explicit and portable. With a 5:1 FN/FP cost ratio the optimal threshold is 0.167; a bank with a different loss estimate simply updates $c_{FN}$ and recomputes $p^* = c_{FP}/(c_{FP}+c_{FN})$.
