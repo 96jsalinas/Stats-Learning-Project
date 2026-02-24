@@ -6,6 +6,10 @@ format:
         toc: true
         toc-depth: 3
 jupyter: python3
+authors:
+  - name: Josu Salinas Colina
+  - name: Eoin Gallagher
+  - name: Francisca Eeckels
 ---
 
 # Overview
