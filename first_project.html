@@ -238,7 +238,7 @@ window.Quarto = {
 <section id="load-basic-cleaning" class="level1">
 <h1>1. Load &amp; Basic Cleaning</h1>
 <p>We first load the dataset from a local cache (or download it if absent), drop the meaningless <code>ID</code> column, and rename every feature to a more readable snake-case convention. Two helper label columns (<code>edu_label</code>, <code>gender_label</code>) are created <strong>for visualisation only</strong> and will be dropped before modelling.</p>
-<div id="1287739c" class="cell" data-execution_count="1">
+<div id="058b5bf8" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
@@ -287,7 +287,7 @@ window.Quarto = {
 <div class="cell-output cell-output-stdout">
 <pre><code>Shape: (30000, 26)</code></pre>
 </div>
-<div class="cell-output cell-output-display" data-execution_count="36">
+<div class="cell-output cell-output-display" data-execution_count="1">
 <div>
 
 
@@ -404,7 +404,7 @@ window.Quarto = {
 <section id="data-integrity-summary" class="level1">
 <h1>2. Data Integrity &amp; Summary</h1>
 <p>Before any modelling we perform a per-column audit covering: data type, count of missing values, mean, skewness and excess kurtosis.</p>
-<div id="0b90ff26" class="cell" data-execution_count="2">
+<div id="4f5def23" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> academic_summary(df_in):</span>
@@ -419,7 +419,7 @@ window.Quarto = {
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>academic_summary(df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="37">
+<div class="cell-output cell-output-display" data-execution_count="2">
 <div>
 
 
@@ -647,7 +647,7 @@ window.Quarto = {
 <section id="univariate-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="univariate-analysis">3.1 Univariate Analysis</h2>
 <p>We inspect the distribution of the target variable, age, credit limit, and education level.</p>
-<div id="bc45f854" class="cell" data-execution_count="3">
+<div id="4a1ba105" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">9</span>))</span>
@@ -688,7 +688,7 @@ window.Quarto = {
 </section>
 <section id="bivariate-analysis-features-vs-default" class="level2">
 <h2 class="anchored" data-anchor-id="bivariate-analysis-features-vs-default">3.2 Bivariate Analysis: Features vs Default</h2>
-<div id="ca4069e9" class="cell" data-execution_count="4">
+<div id="003f5007" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>))</span>
@@ -722,7 +722,7 @@ window.Quarto = {
 <section id="multicollinearity-assessment" class="level2">
 <h2 class="anchored" data-anchor-id="multicollinearity-assessment">3.3 Multicollinearity Assessment</h2>
 <p>High correlations between predictors can distort probabilistic models (e.g.&nbsp;Naïve Bayes) and inflate variance in regression-based approaches. We focus on the six monthly bill-amount columns.</p>
-<div id="eda78c8f" class="cell" data-execution_count="5">
+<div id="1bb8ebd8" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>bill_cols <span class="op">=</span> [c <span class="cf">for</span> c <span class="kw">in</span> df.columns <span class="cf">if</span> <span class="st">'bill'</span> <span class="kw">in</span> c]</span>
@@ -753,7 +753,7 @@ window.Quarto = {
 <section id="temporal-trends-bills-vs-payments" class="level2">
 <h2 class="anchored" data-anchor-id="temporal-trends-bills-vs-payments">3.4 Temporal Trends: Bills vs Payments</h2>
 <p>We plot the mean bill amount and mean payment amount across the six observation months (April–September 2005) to detect any macro-level trend.</p>
-<div id="6aeb3f0f" class="cell" data-execution_count="6">
+<div id="6241e6fe" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>bill_cols_ordered <span class="op">=</span> [<span class="st">'bill_apr'</span>, <span class="st">'bill_may'</span>, <span class="st">'bill_jun'</span>,</span>
@@ -794,7 +794,7 @@ window.Quarto = {
 <section id="variable-grouping" class="level2">
 <h2 class="anchored" data-anchor-id="variable-grouping">4.1 Variable Grouping</h2>
 <p>We explicitly categorise every feature before applying transformations, ensuring the right treatment for each variable type.</p>
-<div id="f9cc4dc0" class="cell" data-execution_count="7">
+<div id="a84a384b" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>monetary_cols <span class="op">=</span> [</span>
@@ -826,7 +826,7 @@ Nominal (to one-hot encode): ['gender', 'marital_status']</code></pre>
 <section id="cleaning-encoding" class="level2">
 <h2 class="anchored" data-anchor-id="cleaning-encoding">4.2 Cleaning &amp; Encoding</h2>
 <p>Undocumented category codes (0, 5, 6 in <code>education</code>; 0 in <code>marital_status</code>) are collapsed into the existing “Other” category. Nominal variables are one-hot encoded (dropping the first level to avoid perfect multicollinearity).</p>
-<div id="c13f3f53" class="cell" data-execution_count="8">
+<div id="e3983266" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'education'</span>]      <span class="op">=</span> df[<span class="st">'education'</span>].replace([<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">6</span>], <span class="dv">4</span>)</span>
@@ -849,7 +849,7 @@ Columns: ['credit_limit', 'education', 'age', 'status_sep', 'status_aug', 'statu
 <section id="train-test-split" class="level2">
 <h2 class="anchored" data-anchor-id="train-test-split">4.3 Train / Test Split</h2>
 <p>A stratified 70 / 30 split preserves the original class ratio in both subsets, preventing optimistic evaluation bias from accidental over-representation of non-defaults in the test set.</p>
-<div id="3f3f9234" class="cell" data-execution_count="9">
+<div id="7a5f29ed" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>X_train, X_test, y_train, y_test <span class="op">=</span> train_test_split(</span>
@@ -872,7 +872,7 @@ Test set     : 9000 rows  (default rate = 0.221)</code></pre>
 <section id="selective-log-transformation" class="level2">
 <h2 class="anchored" data-anchor-id="selective-log-transformation">4.4 Selective Log Transformation</h2>
 <p>To reduce skewness in monetary columns we apply <strong>log1p</strong> (i.e.&nbsp;log(1 + x)) but only to columns whose absolute skewness on the training set exceeds a threshold of 0.75. This threshold-based approach avoids unnecessarily transforming variables that are already approximately symmetric, and the threshold decision is made on training data only to prevent data leakage.</p>
-<div id="d012cd94" class="cell" data-execution_count="10">
+<div id="1ae6ebfc" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>SKEW_THRESHOLD <span class="op">=</span> <span class="fl">0.75</span></span>
@@ -896,7 +896,7 @@ Test set     : 9000 rows  (default rate = 0.221)</code></pre>
 <section id="standardisation" class="level2">
 <h2 class="anchored" data-anchor-id="standardisation">4.5 Standardisation</h2>
 <p>Finally, all features are standardised to zero mean and unit variance using <code>StandardScaler</code> fitted <strong>exclusively on the training set</strong>. The same parameters are then applied to the test set, again avoiding leakage.</p>
-<div id="e200ff35" class="cell" data-execution_count="11">
+<div id="c190c23d" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>final_cols <span class="op">=</span> (monetary_cols <span class="op">+</span> ordinal_cols <span class="op">+</span></span>
@@ -917,7 +917,7 @@ Test set     : 9000 rows  (default rate = 0.221)</code></pre>
 <pre><code>Final feature count: 24
 Sample of scaled training data:</code></pre>
 </div>
-<div class="cell-output cell-output-display" data-execution_count="46">
+<div class="cell-output cell-output-display" data-execution_count="11">
 <div>
 
 
@@ -1035,7 +1035,7 @@ Sample of scaled training data:</code></pre>
 <section id="preprocessing-verification" class="level1">
 <h1>5. Preprocessing Verification</h1>
 <p>We confirm that log transformation meaningfully reduced skewness in the targeted columns.</p>
-<div id="ef329a27" class="cell" data-execution_count="12">
+<div id="edf88b51" class="cell" data-execution_count="12">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> logged_cols:</span>
@@ -1186,7 +1186,7 @@ Sample of scaled training data:</code></pre>
 </tr>
 </tbody>
 </table>
-<div id="5db674ad" class="cell" data-execution_count="13">
+<div id="97a92ab2" class="cell" data-execution_count="13">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.discriminant_analysis <span class="im">import</span> LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis</span>
@@ -1220,7 +1220,7 @@ Sample of scaled training data:</code></pre>
 </section>
 <section id="fit-evaluate" class="level3">
 <h3 class="anchored" data-anchor-id="fit-evaluate">Fit &amp; Evaluate</h3>
-<div id="6399c22a" class="cell" data-execution_count="14">
+<div id="1593f569" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>lda <span class="op">=</span> LinearDiscriminantAnalysis()</span>
@@ -1248,7 +1248,7 @@ weighted avg       0.78      0.81      0.77      9000
 ROC-AUC: 0.7401</code></pre>
 </div>
 </div>
-<div id="3570f192" class="cell" data-execution_count="15">
+<div id="d6331ad8" class="cell" data-execution_count="15">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="dv">4</span>))</span>
@@ -1296,7 +1296,7 @@ ROC-AUC: 0.7401</code></pre>
 </section>
 <section id="fit-evaluate-1" class="level3">
 <h3 class="anchored" data-anchor-id="fit-evaluate-1">Fit &amp; Evaluate</h3>
-<div id="58de9d64" class="cell" data-execution_count="16">
+<div id="09ecba09" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>qda <span class="op">=</span> QuadraticDiscriminantAnalysis(reg_param<span class="op">=</span><span class="fl">0.01</span>)</span>
@@ -1327,7 +1327,7 @@ ROC-AUC: 0.7151</code></pre>
 <blockquote class="blockquote">
 <p><code>reg_param=0.01</code> adds a small ridge to each class covariance matrix, stabilising inversion when some features are near-collinear (as seen in the bill-amount correlations from Section 3.3).</p>
 </blockquote>
-<div id="c524a338" class="cell" data-execution_count="17">
+<div id="9bdbe83d" class="cell" data-execution_count="17">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="dv">4</span>))</span>
@@ -1377,7 +1377,7 @@ ROC-AUC: 0.7151</code></pre>
 </section>
 <section id="fit-evaluate-2" class="level3">
 <h3 class="anchored" data-anchor-id="fit-evaluate-2">Fit &amp; Evaluate</h3>
-<div id="761839b0" class="cell" data-execution_count="18">
+<div id="b0ad6f6f" class="cell" data-execution_count="18">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>gnb <span class="op">=</span> GaussianNB()</span>
@@ -1405,7 +1405,7 @@ weighted avg       0.77      0.76      0.77      9000
 ROC-AUC: 0.7396</code></pre>
 </div>
 </div>
-<div id="2d05b58c" class="cell" data-execution_count="19">
+<div id="823a1011" class="cell" data-execution_count="19">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="dv">4</span>))</span>
@@ -1444,7 +1444,7 @@ ROC-AUC: 0.7396</code></pre>
 <h2 class="anchored" data-anchor-id="model-comparison">6.5 Model Comparison</h2>
 <section id="combined-roc-curves" class="level3">
 <h3 class="anchored" data-anchor-id="combined-roc-curves">Combined ROC Curves</h3>
-<div id="188d7da2" class="cell" data-execution_count="20">
+<div id="5255993f" class="cell" data-execution_count="20">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
@@ -1470,7 +1470,7 @@ ROC-AUC: 0.7396</code></pre>
 </section>
 <section id="summary-table" class="level3">
 <h3 class="anchored" data-anchor-id="summary-table">Summary Table</h3>
-<div id="b8d8a4b4" class="cell" data-execution_count="21">
+<div id="14cb69ce" class="cell" data-execution_count="21">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> accuracy_score, precision_score, recall_score, f1_score</span>
@@ -1551,9 +1551,9 @@ ROC-AUC: 0.7396</code></pre>
 <section id="discussion" class="level3">
 <h3 class="anchored" data-anchor-id="discussion">Discussion</h3>
 <ul>
-<li><strong>LDA</strong> achieves the highest overall accuracy (81 %) and highest ROC-AUC (0.74), making it the best ranking model. Its weakness is the very low recall on defaulters (27 %): it is a conservative model that only flags cases it is highly confident about, producing a precision of 0.65 on the default class.</li>
-<li><strong>QDA</strong> has the lowest accuracy (75 %) and lowest AUC (0.72), but nearly doubles LDA’s recall on defaults (49 %). The extra covariance flexibility partially captures the different spending volatility between the two classes, though multicollinearity in the bill features caps the gains.</li>
-<li><strong>Gaussian Naïve Bayes</strong> strikes the best minority-class balance: highest default recall (51 %), best default F1 (0.49), and an AUC (0.74) that matches LDA. It is the best choice when catching defaulters matters more than precision, provided the output probabilities are recalibrated before use.</li>
+<li><strong>LDA</strong> achieves the <strong>highest overall accuracy</strong> (81 %) and <strong>highest ROC-AUC</strong> (0.74), making it the best ranking model. Its weakness is the <strong>very low recall on defaulters</strong> (27 %): it is a conservative model that only flags cases it is highly confident about, producing a precision of 0.65 on the default class.</li>
+<li><strong>QDA</strong> has the lowest accuracy (75 %) and lowest AUC (0.72), but <strong>nearly doubles LDA’s recall on defaults</strong> (49 %). The extra covariance flexibility partially captures the different spending volatility between the two classes, though multicollinearity in the bill features caps the gains.</li>
+<li><strong>Gaussian Naïve Bayes</strong> strikes the <strong>best minority-class balance</strong>: highest default recall (51 %), best default F1 (0.49), and an AUC (0.74) that matches LDA. It is the <strong>best choice when catching defaulters matters</strong> more than precision, provided the output probabilities are recalibrated before use.</li>
 <li>The core issue of all three models is the <strong>precision–recall trade-off on the minority class</strong>, none reaches a default F1 above 0.49.</li>
 </ul>
 <hr>
@@ -1570,7 +1570,7 @@ ROC-AUC: 0.7396</code></pre>
 <li><strong>False Positive</strong> (flagging a good client): a brief manual review is triggered, low administrative cost.</li>
 </ul>
 <p>This asymmetry must be encoded explicitly rather than left to the default 0.5 threshold.</p>
-<div id="4ea39d1a" class="cell" data-execution_count="22">
+<div id="5a7cc034" class="cell" data-execution_count="22">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -1633,7 +1633,7 @@ weighted avg       0.61      0.78      0.68      9000
 <p>A missed defaulter costs <strong>5×</strong> more than a false alarm. This yields the theoretical optimal threshold:</p>
 <p><span class="math display">\[p^* = \frac{c_{FP}}{c_{FP} + c_{FN}} = \frac{1}{1 + 5} \approx 0.167\]</span></p>
 <p>Any client whose predicted default probability exceeds 0.167 should be classified as a defaulter.</p>
-<div id="e8512ec0" class="cell" data-execution_count="23">
+<div id="99d7968f" class="cell" data-execution_count="23">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Cost matrix: rows = actual, cols = predicted</span></span>
@@ -1662,7 +1662,7 @@ weighted avg       0.61      0.78      0.68      9000
 <p>The LDA model already yields calibrated probabilities (AUC 0.74). Instead of always predicting the class with the highest probability, we apply a custom threshold derived from the cost matrix.</p>
 <section id="threshold-sweep" class="level3">
 <h3 class="anchored" data-anchor-id="threshold-sweep">Threshold sweep</h3>
-<div id="1ef95455" class="cell" data-execution_count="24">
+<div id="d27fc47c" class="cell" data-execution_count="24">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>thresholds <span class="op">=</span> np.arange(<span class="fl">0.05</span>, <span class="fl">0.70</span>, <span class="fl">0.025</span>)</span>
@@ -1725,7 +1725,7 @@ Theoretical threshold       : 0.167</code></pre>
 </section>
 <section id="performance-at-the-cost-optimal-threshold" class="level3">
 <h3 class="anchored" data-anchor-id="performance-at-the-cost-optimal-threshold">Performance at the cost-optimal threshold</h3>
-<div id="9f8a86de" class="cell" data-execution_count="25">
+<div id="0ad308b0" class="cell" data-execution_count="25">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>y_pred_lda_tuned <span class="op">=</span> (y_prob_lda <span class="op">&gt;=</span> opt_t).astype(<span class="bu">int</span>)</span>
@@ -1779,7 +1779,7 @@ Expected cost at default threshold (0.50): 0.8397</code></pre>
 <p>A second principled approach to threshold selection uses the ROC curve directly. <strong>Youden’s J statistic</strong> maximises the sum of sensitivity and specificity:</p>
 <p><span class="math display">\[J = \text{Sensitivity} + \text{Specificity} - 1 = \text{TPR} - \text{FPR}\]</span></p>
 <p>This is a symmetrical criterion that treats both error types equally, in contrast to the cost-matrix threshold which explicitly weights false negatives 5× more. The optimal point is the threshold at which the ROC curve is furthest from the random-classifier diagonal.</p>
-<div id="e184379e" class="cell" data-execution_count="26">
+<div id="e32a9f96" class="cell" data-execution_count="26">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> roc_curve</span>
@@ -1819,7 +1819,7 @@ weighted avg       0.78      0.75      0.77      9000
 Expected cost : 0.6002</code></pre>
 </div>
 </div>
-<div id="9a92d805" class="cell" data-execution_count="27">
+<div id="68d3637a" class="cell" data-execution_count="27">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">18</span>, <span class="dv">4</span>))</span>
@@ -1852,7 +1852,7 @@ Expected cost : 0.6002</code></pre>
 </div>
 <p><strong>Interpretation:</strong> Youden’s J selects a threshold of <strong>0.2244</strong> (sensitivity 0.60, specificity 0.80, J = 0.398), yielding recall 60 %, F1 <strong>0.52</strong>, accuracy 75 %, and expected cost <strong>0.600</strong>. The cost-matrix threshold (0.200) lands lower because it explicitly penalises false negatives more, pushing the boundary further toward flagging borderline clients as defaulters to avoid the 5× FN penalty. In this dataset the two thresholds sit close together (0.200 vs 0.224) and produce nearly identical expected costs (0.599 vs 0.600), but in settings with more extreme cost ratios or better-calibrated probabilities, the gap would widen. Youden’s J is the right default when costs are unknown or symmetric; the cost-matrix threshold is strictly better here because it encodes the business loss function directly.</p>
 <p>A cleaner, model-level intervention: refit LDA with balanced priors <span class="math inline">\(\pi_0 = \pi_1 = 0.5\)</span> instead of the empirical 78 / 22 split. This shifts the decision boundary toward the majority class, raising default recall without touching the threshold.</p>
-<div id="b71f919b" class="cell" data-execution_count="28">
+<div id="23d33669" class="cell" data-execution_count="28">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Empirical (default) priors</span></span>
@@ -1951,7 +1951,7 @@ Expected cost : 0.6002</code></pre>
 <p>Data-level strategies modify the training set rather than the model. We compare three approaches and evaluate each at the default 0.5 threshold and at the cost-optimal threshold.</p>
 <section id="strategies" class="level3">
 <h3 class="anchored" data-anchor-id="strategies">Strategies</h3>
-<div id="b89817cb" class="cell" data-execution_count="29">
+<div id="84c11364" class="cell" data-execution_count="29">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.utils <span class="im">import</span> resample</span>
@@ -2000,7 +2000,7 @@ Oversampled training set  : 32710 rows   (default rate = 0.500)
 SMOTE training set        : 32710 rows   (default rate = 0.500)</code></pre>
 </div>
 </div>
-<div id="c18efb76" class="cell" data-execution_count="30">
+<div id="18f6826a" class="cell" data-execution_count="30">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit LDA on each training set</span></span>
@@ -2118,7 +2118,7 @@ SMOTE training set        : 32710 rows   (default rate = 0.500)</code></pre>
 </section>
 <section id="confusion-matrices-at-threshold-0.5" class="level3">
 <h3 class="anchored" data-anchor-id="confusion-matrices-at-threshold-0.5">Confusion matrices at threshold 0.5</h3>
-<div id="4db5b286" class="cell" data-execution_count="31">
+<div id="929794a3" class="cell" data-execution_count="31">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">4</span>, figsize<span class="op">=</span>(<span class="dv">20</span>, <span class="dv">4</span>))</span>
@@ -2156,7 +2156,7 @@ SMOTE training set        : 32710 rows   (default rate = 0.500)</code></pre>
 </section>
 <section id="overall-comparison" class="level2">
 <h2 class="anchored" data-anchor-id="overall-comparison">7.6 Overall Comparison</h2>
-<div id="d0ae2064" class="cell" data-execution_count="32">
+<div id="3bf6ca6f" class="cell" data-execution_count="32">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>all_rows <span class="op">=</span> []</span>
@@ -2327,7 +2327,7 @@ SMOTE training set        : 32710 rows   (default rate = 0.500)</code></pre>
 </section>
 <section id="fit-evaluate-baseline-k-5" class="level2">
 <h2 class="anchored" data-anchor-id="fit-evaluate-baseline-k-5">8.2 Fit &amp; Evaluate (baseline k = 5)</h2>
-<div id="fd2487b6" class="cell" data-execution_count="33">
+<div id="6a06bee8" class="cell" data-execution_count="33">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.neighbors <span class="im">import</span> KNeighborsClassifier</span>
@@ -2409,7 +2409,7 @@ ROC-AUC: 0.7158</code></pre>
 <section id="selecting-k-by-cross-validation" class="level2">
 <h2 class="anchored" data-anchor-id="selecting-k-by-cross-validation">8.3 Selecting k by Cross-Validation</h2>
 <p>To choose (k) systematically, we evaluate a grid of odd (k) values using 5-fold stratified cross-validation, selecting the (k) that maximises mean ROC-AUC on the training set.</p>
-<div id="c70a39cf" class="cell" data-execution_count="34">
+<div id="50d18728" class="cell" data-execution_count="34">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> StratifiedKFold</span>
@@ -2621,7 +2621,7 @@ ROC-AUC: 0.7158</code></pre>
 </section>
 <section id="fit-evaluate-best-k-nn-on-the-test-set" class="level2">
 <h2 class="anchored" data-anchor-id="fit-evaluate-best-k-nn-on-the-test-set">8.4 Fit &amp; Evaluate Best k-NN on the Test Set</h2>
-<div id="1cf9e220" class="cell" data-execution_count="35">
+<div id="b11aeb1c" class="cell" data-execution_count="35">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>knn_best <span class="op">=</span> KNeighborsClassifier(n_neighbors<span class="op">=</span>best_k)</span>

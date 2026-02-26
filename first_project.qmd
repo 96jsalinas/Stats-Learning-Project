@@ -571,9 +571,9 @@ display(summary_df)
 
 ### Discussion
 
-* **LDA** achieves the highest overall accuracy (81 %) and highest ROC-AUC (0.74), making it the best ranking model. Its weakness is the very low recall on defaulters (27 %): it is a conservative model that only flags cases it is highly confident about, producing a precision of 0.65 on the default class.
-* **QDA** has the lowest accuracy (75 %) and lowest AUC (0.72), but nearly doubles LDA's recall on defaults (49 %). The extra covariance flexibility partially captures the different spending volatility between the two classes, though multicollinearity in the bill features caps the gains.
-* **Gaussian Naïve Bayes** strikes the best minority-class balance: highest default recall (51 %), best default F1 (0.49), and an AUC (0.74) that matches LDA. It is the best choice when catching defaulters matters more than precision, provided the output probabilities are recalibrated before use.
+* **LDA** achieves the **highest overall accuracy** (81 %) and **highest ROC-AUC** (0.74), making it the best ranking model. Its weakness is the **very low recall on defaulters** (27 %): it is a conservative model that only flags cases it is highly confident about, producing a precision of 0.65 on the default class.
+* **QDA** has the lowest accuracy (75 %) and lowest AUC (0.72), but **nearly doubles LDA's recall on defaults** (49 %). The extra covariance flexibility partially captures the different spending volatility between the two classes, though multicollinearity in the bill features caps the gains.
+* **Gaussian Naïve Bayes** strikes the **best minority-class balance**: highest default recall (51 %), best default F1 (0.49), and an AUC (0.74) that matches LDA. It is the **best choice when catching defaulters matters** more than precision, provided the output probabilities are recalibrated before use.
 * The core issue of all three models is the **precision–recall trade-off on the minority class**, none reaches a default F1 above 0.49.
 
 ---
@@ -993,8 +993,8 @@ Because k-NN relies directly on distances, it must be applied to standardised fe
 
 The main tuning choice is k:
 
-* Small k → more flexible boundary (higher variance).
-* Large k → smoother boundary (higher bias).
+* Small k: more flexible boundary (higher variance).
+* Large k: smoother boundary (higher bias).
 
 ## 8.2 Fit & Evaluate (baseline k = 5)
 
