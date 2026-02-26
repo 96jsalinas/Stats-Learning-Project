@@ -139,6 +139,8 @@ plt.show()
 ## 3.2 Bivariate Analysis: Features vs Default
 
 ```{python}
+#| warning: false
+#| 
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
 sns.boxplot(x='default', y='age', data=df, palette='Set2', ax=axes[0])
