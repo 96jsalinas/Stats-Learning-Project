@@ -105,6 +105,8 @@ academic_summary(df)
 We inspect the distribution of the target variable, age, credit limit, and education level.
 
 ```{python}
+#| warning: false
+#| 
 fig, axes = plt.subplots(2, 2, figsize=(14, 9))
 
 sns.countplot(x='default', data=df, ax=axes[0, 0], palette='viridis')
