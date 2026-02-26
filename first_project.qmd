@@ -1,5 +1,5 @@
 ---
-title: "Credit Card Default: EDA & Preprocessing"
+title: "Credit Card Default: Probabilistic Tool Analysis"
 format:
     html:
         code-fold: true
@@ -1038,18 +1038,18 @@ plt.show()
 
 ### Interpretation
 
-* With \(k=5\), k-NN achieves 80 % accuracy on the test set, but (as in earlier models) accuracy is inflated by class imbalance (only about 22 % of the test set are defaulters).
+* With k=5, k-NN achieves 80 % accuracy on the test set, but (as in earlier models) accuracy is inflated by class imbalance (only about 22 % of the test set are defaulters).
 * From the confusion matrix (TN = 6450, FP = 559, FN = 1243, TP = 748), the model is conservative in predicting “Default”: it predicts default for 1307 / 9000 = 14.5 % of cases, below the true default rate (22.1 %).
 * The recall on the Default class is 0.38, meaning k-NN correctly identifies 748 defaulters but still misses 1243 (about 62 % of actual defaulters). This is the key weakness at the standard 0.50 threshold.
 * On the other hand, the model performs well on the majority class: No Default recall is 0.92, i.e. only about 8 % of non-defaulters are incorrectly marked as default (FP = 559 out of 7009).
-* The ROC-AUC of 0.7158 indicates meaningful ranking ability (better than random), but thresholding at 0.50 leaves many false negatives. This motivates tuning \(k\) via cross-validation (Section 8.3).
+* The ROC-AUC of 0.7158 indicates meaningful ranking ability (better than random), but thresholding at 0.50 leaves many false negatives. This motivates tuning k via cross-validation (Section 8.3).
 * The Precision–Recall curve summarises the trade-off on the minority class across thresholds. The average precision (AP) is 0.422, which indicates moderate ability to retrieve defaulters, but also shows that precision drops quickly as recall increases (i.e. capturing more defaulters requires accepting many more false positives).
 
 
 
 ## 8.3 Selecting k by Cross-Validation
 
-To choose \(k\) systematically, we evaluate a grid of odd \(k\) values using 5-fold stratified cross-validation, selecting the \(k\) that maximises mean ROC-AUC on the training set.
+To choose k systematically, we evaluate a grid of odd k values using 5-fold stratified cross-validation, selecting the k that maximises mean ROC-AUC on the training set.
 
 
 ```{python}
@@ -1123,13 +1123,13 @@ plt.show()
 
 ### Interpretation
 
-* The cross-validation results show a clear bias–variance trade-off. For very small \(k\) (e.g. \(k=1\)), mean CV ROC-AUC is low (about 0.61), which is consistent with high-variance behaviour (the classifier is too sensitive to local noise).
-* As \(k\) increases, the mean CV ROC-AUC improves rapidly at first (by around \(k \approx 5\) it is already about 0.71), then increases more gradually and plateaus for larger \(k\).
-* The CV Accuracy curve shows a similar pattern: accuracy rises quickly for small \(k\) and then stabilises around 0.80–0.81 for moderate to large \(k\). This reinforces that increasing \(k\) beyond roughly \(20\) gives only marginal improvements in overall classification accuracy.
-* The shaded band (mean ± 1 sd) indicates that variability across folds is relatively small once \(k\) is moderate, and the curves for large \(k\) overlap substantially. The extended grid (up to \(k=61\)) confirms that the curve has genuinely plateaued, so the selected \(k\) is not a boundary artefact; nearby values would perform very similarly.
-* The curve flattens noticeably after roughly \(k \approx 20\), where improvements become marginal. This suggests that once the neighbourhood is large enough, adding more neighbours produces only small gains in ranking performance.
-* The best mean CV ROC-AUC occurs at the selected \(k\) with a standard deviation of about 0.009, confirming stability across folds. Nearby values are extremely close, indicating that performance is fairly stable in the high-\(k\) region.
-* We take \(k=59\) forward into the final test evaluation (Section 8.4).
+* The cross-validation results show a clear bias–variance trade-off. For very small k (e.g. k=1), mean CV ROC-AUC is low (about 0.61), which is consistent with high-variance behaviour (the classifier is too sensitive to local noise).
+* As k increases, the mean CV ROC-AUC improves rapidly at first (by around k ≈ 5 it is already about 0.71), then increases more gradually and plateaus for larger k.
+* The CV Accuracy curve shows a similar pattern: accuracy rises quickly for small k and then stabilises around 0.80–0.81 for moderate to large k. This reinforces that increasing k beyond roughly 20 gives only marginal improvements in overall classification accuracy.
+* The shaded band (mean ± 1 sd) indicates that variability across folds is relatively small once k is moderate, and the curves for large k overlap substantially. The extended grid (up to k=61) confirms that the curve has genuinely plateaued, so the selected k is not a boundary artefact; nearby values would perform very similarly.
+* The curve flattens noticeably after roughly k ≈ 20, where improvements become marginal. This suggests that once the neighbourhood is large enough, adding more neighbours produces only small gains in ranking performance.
+* The best mean CV ROC-AUC occurs at the selected k with a standard deviation of about 0.0102, confirming stability across folds. Nearby values are extremely close, indicating that performance is fairly stable in the high-k region.
+* We take k=59 forward into the final test evaluation (Section 8.4).
 
 
 ## 8.4 Fit & Evaluate Best k-NN on the Test Set
@@ -1187,12 +1187,12 @@ plt.show()
 
 ### Interpretation
 
-* The cross-validated choice \(k=59\) generalises well: the mean CV ROC-AUC was 0.7626 and the test ROC-AUC is 0.7575, a small drop of about 0.005, suggesting limited overfitting.
-* Relative to the baseline \(k=5\) (ROC-AUC 0.7158), the tuned model improves ranking performance by about 0.042 in ROC-AUC and slightly increases accuracy (0.81 vs 0.80). This confirms that tuning \(k\) materially improves discrimination.
-* From the confusion matrix (TN = 6679, FP = 330, FN = 1402, TP = 589), the model is even more conservative at the default 0.50 threshold: it predicts “Default” only 919 / 9000 = 10.2% of the time, well below the true default rate (22.1%).
-* For the Default class, precision is 0.64, but recall drops to 0.28 (approximately 72 % of defaulters are missed). In other words, increasing \(k\) smooths the decision rule and reduces false positives, but increases false negatives.
+* The cross-validated choice k=59 generalises well: the mean CV ROC-AUC was 0.7626 and the test ROC-AUC is 0.7575, a small drop of about 0.005, suggesting limited overfitting.
+* Relative to the baseline k=5 (ROC-AUC 0.7158), the tuned model improves ranking performance by about 0.042 in ROC-AUC and slightly increases accuracy (0.81 vs 0.80). This confirms that tuning k materially improves discrimination.
+* From the confusion matrix (TN = 6705, FP = 304, FN = 1442, TP = 549), the model is even more conservative at the default 0.50 threshold: it predicts “Default” only 851 / 9000 = 9.45% of the time, well below the true default rate (22.1%).
+* For the Default class, precision is 0.64, but recall drops to 0.28 (approximately 72 % of defaulters are missed). In other words, increasing k smooths the decision rule and reduces false positives, but increases false negatives.
 * Performance on the majority class remains strong (No Default recall 0.96), which helps overall accuracy but again highlights that accuracy alone is not sufficient under class imbalance. 
-* The combined ROC plot shows that the tuned model dominates the baseline across most thresholds: AUC increases from 0.716 (k=5) to 0.757 (k=59), confirming that tuning \(k\) improves the model’s ability to rank defaulters ahead of non-defaulters.
+* The combined ROC plot shows that the tuned model dominates the baseline across most thresholds: AUC increases from 0.716 (k=5) to 0.757 (k=59), confirming that tuning k improves the model’s ability to rank defaulters ahead of non-defaulters.
 * The Precision–Recall plot provides a clearer view under class imbalance. Average precision increases substantially from 0.422 (k=5) to approximately 0.51 (k=59), meaning the tuned model achieves better precision at a given recall level over a wide range of thresholds. This improvement in ranking contrasts with the low Default recall at the fixed 0.50 threshold, highlighting that the main limitation is the chosen decision threshold rather than the model’s probability ordering.
 
 
@@ -1202,10 +1202,10 @@ This report analysed the UCI Default of Credit Card Clients dataset (30,000 card
 
 A structured preprocessing pipeline was essential before modelling. We replaced any undocumented category values with a single “Other” group, and then one-hot encoded the categorical variables so the model could use them consistently. To reduce the strong right-skew in monetary variables, a selective log1p transform was applied to 13 skewed columns (credit limit, bills, and payments), and then all features were standardised using a scaler fit only on the training set to avoid leakage. 
 
-For probabilistic classifiers, the results show a clear trade-off between overall accuracy and minority-class detection. LDA achieved the best overall ranking among the generative models (ROC-AUC \(\approx\) 0.7401, accuracy \(\approx\) 0.8066) but was conservative, with Default recall \(\approx\) 0.2697 at threshold 0.50. QDA improved Default recall (\(\approx\) 0.4902) at the expense of lower ROC-AUC (\(\approx\) 0.7151) and lower accuracy (\(\approx\) 0.7520), consistent with the added flexibility being limited by correlated billing features. Gaussian Naïve Bayes offered the best minority-class balance among these three (Default recall \(\approx\) 0.5113, Default F1 \(\approx\) 0.4891) while maintaining an ROC-AUC comparable to LDA (\(\approx\) 0.7396). 
+For probabilistic classifiers, the results show a clear trade-off between overall accuracy and minority-class detection. LDA achieved the best overall ranking among the generative models (ROC-AUC ≈ 0.7401, accuracy ≈ 0.8066) but was conservative, with Default recall (≈ 0.2697) at threshold 0.50. QDA improved Default recall (≈ 0.4902) at the expense of lower ROC-AUC (≈ 0.7151) and lower accuracy (≈ 0.7520), consistent with the added flexibility being limited by correlated billing features. Gaussian Naïve Bayes offered the best minority-class balance among these three (Default recall ≈ 0.5113, Default F1 ≈ 0.4891) while maintaining an ROC-AUC comparable to LDA (≈ 0.7396). 
 
-Because the application is credit risk, Section 7 demonstrated that performance should be evaluated under asymmetric error costs. Using a cost matrix with false negatives more expensive than false positives yields a theoretical cost-optimal probability threshold of \(p^* \approx 0.1667\).  The highest-leverage intervention was threshold tuning on LDA probabilities: moving from the default threshold 0.50 (expected cost \(\approx\) 0.8397) to a cost-aligned threshold around 0.20 reduced expected cost to about 0.5990 and raised Default recall to about 0.6339.  Balanced priors provided a similarly strong, model-level alternative with expected cost around 0.601, while resampling (undersampling/oversampling/SMOTE) improved recall at threshold 0.50 but could overshoot under the cost-optimal threshold, worsening expected cost. 
+Because the application is credit risk, Section 7 demonstrated that performance should be evaluated under asymmetric error costs. Using a cost matrix with false negatives more expensive than false positives yields a theoretical cost-optimal probability threshold of $p^* = 0.167$.  The highest-leverage intervention was threshold tuning on LDA probabilities: moving from the default threshold 0.50 (expected cost ≈ 0.8397) to a cost-aligned threshold around 0.20 reduced expected cost to about 0.5990 and raised Default recall to about 0.6339.  Balanced priors provided a similarly strong, model-level alternative with expected cost around 0.601, while resampling (undersampling/oversampling/SMOTE) improved recall at threshold 0.50 but could overshoot under the cost-optimal threshold, worsening expected cost. 
 
-Finally, k-NN showed that non-parametric models can improve discrimination when tuned: cross-validation selected \(k=59\), and test ROC-AUC increased to 0.7575 (vs 0.7158 for \(k=5\)).  However, at the default 0.50 threshold the tuned k-NN remained conservative (Default recall \(\approx\) 0.28), reinforcing the broader finding that ranking performance (ROC-AUC) and decision performance (cost-sensitive classification) are not the same objective.
+Finally, k-NN showed that non-parametric models can improve discrimination when tuned: cross-validation selected k=59, and test ROC-AUC increased to 0.7575 (vs 0.7158 for k=5). However, at the default 0.50 threshold the tuned k-NN remained conservative (Default recall ≈ 0.28), reinforcing the broader finding that ranking performance (ROC-AUC) and decision performance (cost-sensitive classification) are not the same objective.
 
-**Overall recommendation:** for an operational decision rule under the stated 5:1 cost asymmetry, the strongest and simplest solution in this report is to use LDA probability outputs with a cost-sensitive threshold (\(\approx\) 0.20) (or equivalently balanced priors), because it delivers the lowest expected cost while substantially increasing Default recall.
+**Overall recommendation:** for an operational decision rule under the stated 5:1 cost asymmetry, the strongest and simplest solution in this report is to use LDA probability outputs with a cost-sensitive threshold (≈ 0.20) (or equivalently balanced priors), because it delivers the lowest expected cost while substantially increasing Default recall.
