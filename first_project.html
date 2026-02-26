@@ -238,7 +238,7 @@ window.Quarto = {
 <section id="load-basic-cleaning" class="level1">
 <h1>1. Load &amp; Basic Cleaning</h1>
 <p>We first load the dataset from a local cache (or download it if absent), drop the meaningless <code>ID</code> column, and rename every feature to a more readable snake-case convention. Two helper label columns (<code>edu_label</code>, <code>gender_label</code>) are created <strong>for visualisation only</strong> and will be dropped before modelling.</p>
-<div id="058b5bf8" class="cell" data-execution_count="1">
+<div id="d3933e2c" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
@@ -404,7 +404,7 @@ window.Quarto = {
 <section id="data-integrity-summary" class="level1">
 <h1>2. Data Integrity &amp; Summary</h1>
 <p>Before any modelling we perform a per-column audit covering: data type, count of missing values, mean, skewness and excess kurtosis.</p>
-<div id="4f5def23" class="cell" data-execution_count="2">
+<div id="adcebd18" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> academic_summary(df_in):</span>
@@ -647,7 +647,7 @@ window.Quarto = {
 <section id="univariate-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="univariate-analysis">3.1 Univariate Analysis</h2>
 <p>We inspect the distribution of the target variable, age, credit limit, and education level.</p>
-<div id="4a1ba105" class="cell" data-execution_count="3">
+<div id="1b35c48c" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">9</span>))</span>
@@ -688,7 +688,7 @@ window.Quarto = {
 </section>
 <section id="bivariate-analysis-features-vs-default" class="level2">
 <h2 class="anchored" data-anchor-id="bivariate-analysis-features-vs-default">3.2 Bivariate Analysis: Features vs Default</h2>
-<div id="003f5007" class="cell" data-execution_count="4">
+<div id="78249dc2" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>))</span>
@@ -722,7 +722,7 @@ window.Quarto = {
 <section id="multicollinearity-assessment" class="level2">
 <h2 class="anchored" data-anchor-id="multicollinearity-assessment">3.3 Multicollinearity Assessment</h2>
 <p>High correlations between predictors can distort probabilistic models (e.g.&nbsp;Naïve Bayes) and inflate variance in regression-based approaches. We focus on the six monthly bill-amount columns.</p>
-<div id="1bb8ebd8" class="cell" data-execution_count="5">
+<div id="7ca4d903" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>bill_cols <span class="op">=</span> [c <span class="cf">for</span> c <span class="kw">in</span> df.columns <span class="cf">if</span> <span class="st">'bill'</span> <span class="kw">in</span> c]</span>
@@ -753,7 +753,7 @@ window.Quarto = {
 <section id="temporal-trends-bills-vs-payments" class="level2">
 <h2 class="anchored" data-anchor-id="temporal-trends-bills-vs-payments">3.4 Temporal Trends: Bills vs Payments</h2>
 <p>We plot the mean bill amount and mean payment amount across the six observation months (April–September 2005) to detect any macro-level trend.</p>
-<div id="6241e6fe" class="cell" data-execution_count="6">
+<div id="0e265cee" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>bill_cols_ordered <span class="op">=</span> [<span class="st">'bill_apr'</span>, <span class="st">'bill_may'</span>, <span class="st">'bill_jun'</span>,</span>
@@ -794,7 +794,7 @@ window.Quarto = {
 <section id="variable-grouping" class="level2">
 <h2 class="anchored" data-anchor-id="variable-grouping">4.1 Variable Grouping</h2>
 <p>We explicitly categorise every feature before applying transformations, ensuring the right treatment for each variable type.</p>
-<div id="a84a384b" class="cell" data-execution_count="7">
+<div id="093ec08f" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>monetary_cols <span class="op">=</span> [</span>
@@ -826,7 +826,7 @@ Nominal (to one-hot encode): ['gender', 'marital_status']</code></pre>
 <section id="cleaning-encoding" class="level2">
 <h2 class="anchored" data-anchor-id="cleaning-encoding">4.2 Cleaning &amp; Encoding</h2>
 <p>Undocumented category codes (0, 5, 6 in <code>education</code>; 0 in <code>marital_status</code>) are collapsed into the existing “Other” category. Nominal variables are one-hot encoded (dropping the first level to avoid perfect multicollinearity).</p>
-<div id="e3983266" class="cell" data-execution_count="8">
+<div id="f4af58d4" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'education'</span>]      <span class="op">=</span> df[<span class="st">'education'</span>].replace([<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">6</span>], <span class="dv">4</span>)</span>
@@ -849,7 +849,7 @@ Columns: ['credit_limit', 'education', 'age', 'status_sep', 'status_aug', 'statu
 <section id="train-test-split" class="level2">
 <h2 class="anchored" data-anchor-id="train-test-split">4.3 Train / Test Split</h2>
 <p>A stratified 70 / 30 split preserves the original class ratio in both subsets, preventing optimistic evaluation bias from accidental over-representation of non-defaults in the test set.</p>
-<div id="7a5f29ed" class="cell" data-execution_count="9">
+<div id="decf4525" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>X_train, X_test, y_train, y_test <span class="op">=</span> train_test_split(</span>
@@ -872,7 +872,7 @@ Test set     : 9000 rows  (default rate = 0.221)</code></pre>
 <section id="selective-log-transformation" class="level2">
 <h2 class="anchored" data-anchor-id="selective-log-transformation">4.4 Selective Log Transformation</h2>
 <p>To reduce skewness in monetary columns we apply <strong>log1p</strong> (i.e.&nbsp;log(1 + x)) but only to columns whose absolute skewness on the training set exceeds a threshold of 0.75. This threshold-based approach avoids unnecessarily transforming variables that are already approximately symmetric, and the threshold decision is made on training data only to prevent data leakage.</p>
-<div id="1ae6ebfc" class="cell" data-execution_count="10">
+<div id="d0d6947f" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>SKEW_THRESHOLD <span class="op">=</span> <span class="fl">0.75</span></span>
@@ -896,7 +896,7 @@ Test set     : 9000 rows  (default rate = 0.221)</code></pre>
 <section id="standardisation" class="level2">
 <h2 class="anchored" data-anchor-id="standardisation">4.5 Standardisation</h2>
 <p>Finally, all features are standardised to zero mean and unit variance using <code>StandardScaler</code> fitted <strong>exclusively on the training set</strong>. The same parameters are then applied to the test set, again avoiding leakage.</p>
-<div id="c190c23d" class="cell" data-execution_count="11">
+<div id="e4734722" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>final_cols <span class="op">=</span> (monetary_cols <span class="op">+</span> ordinal_cols <span class="op">+</span></span>
@@ -1035,7 +1035,7 @@ Sample of scaled training data:</code></pre>
 <section id="preprocessing-verification" class="level1">
 <h1>5. Preprocessing Verification</h1>
 <p>We confirm that log transformation meaningfully reduced skewness in the targeted columns.</p>
-<div id="edf88b51" class="cell" data-execution_count="12">
+<div id="58d10f98" class="cell" data-execution_count="12">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> logged_cols:</span>
@@ -1186,7 +1186,7 @@ Sample of scaled training data:</code></pre>
 </tr>
 </tbody>
 </table>
-<div id="97a92ab2" class="cell" data-execution_count="13">
+<div id="d2726130" class="cell" data-execution_count="13">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.discriminant_analysis <span class="im">import</span> LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis</span>
@@ -1220,7 +1220,7 @@ Sample of scaled training data:</code></pre>
 </section>
 <section id="fit-evaluate" class="level3">
 <h3 class="anchored" data-anchor-id="fit-evaluate">Fit &amp; Evaluate</h3>
-<div id="1593f569" class="cell" data-execution_count="14">
+<div id="1d7d8256" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>lda <span class="op">=</span> LinearDiscriminantAnalysis()</span>
@@ -1248,7 +1248,7 @@ weighted avg       0.78      0.81      0.77      9000
 ROC-AUC: 0.7401</code></pre>
 </div>
 </div>
-<div id="d6331ad8" class="cell" data-execution_count="15">
+<div id="a9902421" class="cell" data-execution_count="15">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="dv">4</span>))</span>
@@ -1296,7 +1296,7 @@ ROC-AUC: 0.7401</code></pre>
 </section>
 <section id="fit-evaluate-1" class="level3">
 <h3 class="anchored" data-anchor-id="fit-evaluate-1">Fit &amp; Evaluate</h3>
-<div id="09ecba09" class="cell" data-execution_count="16">
+<div id="4cea91b1" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>qda <span class="op">=</span> QuadraticDiscriminantAnalysis(reg_param<span class="op">=</span><span class="fl">0.01</span>)</span>
@@ -1327,7 +1327,7 @@ ROC-AUC: 0.7151</code></pre>
 <blockquote class="blockquote">
 <p><code>reg_param=0.01</code> adds a small ridge to each class covariance matrix, stabilising inversion when some features are near-collinear (as seen in the bill-amount correlations from Section 3.3).</p>
 </blockquote>
-<div id="9bdbe83d" class="cell" data-execution_count="17">
+<div id="862b5ee9" class="cell" data-execution_count="17">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="dv">4</span>))</span>
@@ -1377,7 +1377,7 @@ ROC-AUC: 0.7151</code></pre>
 </section>
 <section id="fit-evaluate-2" class="level3">
 <h3 class="anchored" data-anchor-id="fit-evaluate-2">Fit &amp; Evaluate</h3>
-<div id="b0ad6f6f" class="cell" data-execution_count="18">
+<div id="53ac186f" class="cell" data-execution_count="18">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>gnb <span class="op">=</span> GaussianNB()</span>
@@ -1405,7 +1405,7 @@ weighted avg       0.77      0.76      0.77      9000
 ROC-AUC: 0.7396</code></pre>
 </div>
 </div>
-<div id="823a1011" class="cell" data-execution_count="19">
+<div id="51dcd04f" class="cell" data-execution_count="19">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="dv">4</span>))</span>
@@ -1444,7 +1444,7 @@ ROC-AUC: 0.7396</code></pre>
 <h2 class="anchored" data-anchor-id="model-comparison">6.5 Model Comparison</h2>
 <section id="combined-roc-curves" class="level3">
 <h3 class="anchored" data-anchor-id="combined-roc-curves">Combined ROC Curves</h3>
-<div id="5255993f" class="cell" data-execution_count="20">
+<div id="9fe8f64f" class="cell" data-execution_count="20">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
@@ -1470,7 +1470,7 @@ ROC-AUC: 0.7396</code></pre>
 </section>
 <section id="summary-table" class="level3">
 <h3 class="anchored" data-anchor-id="summary-table">Summary Table</h3>
-<div id="14cb69ce" class="cell" data-execution_count="21">
+<div id="43060b06" class="cell" data-execution_count="21">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> accuracy_score, precision_score, recall_score, f1_score</span>
@@ -1570,7 +1570,7 @@ ROC-AUC: 0.7396</code></pre>
 <li><strong>False Positive</strong> (flagging a good client): a brief manual review is triggered, low administrative cost.</li>
 </ul>
 <p>This asymmetry must be encoded explicitly rather than left to the default 0.5 threshold.</p>
-<div id="5a7cc034" class="cell" data-execution_count="22">
+<div id="de907455" class="cell" data-execution_count="22">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -1633,7 +1633,7 @@ weighted avg       0.61      0.78      0.68      9000
 <p>A missed defaulter costs <strong>5×</strong> more than a false alarm. This yields the theoretical optimal threshold:</p>
 <p><span class="math display">\[p^* = \frac{c_{FP}}{c_{FP} + c_{FN}} = \frac{1}{1 + 5} \approx 0.167\]</span></p>
 <p>Any client whose predicted default probability exceeds 0.167 should be classified as a defaulter.</p>
-<div id="99d7968f" class="cell" data-execution_count="23">
+<div id="279266d3" class="cell" data-execution_count="23">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Cost matrix: rows = actual, cols = predicted</span></span>
@@ -1662,7 +1662,7 @@ weighted avg       0.61      0.78      0.68      9000
 <p>The LDA model already yields calibrated probabilities (AUC 0.74). Instead of always predicting the class with the highest probability, we apply a custom threshold derived from the cost matrix.</p>
 <section id="threshold-sweep" class="level3">
 <h3 class="anchored" data-anchor-id="threshold-sweep">Threshold sweep</h3>
-<div id="d27fc47c" class="cell" data-execution_count="24">
+<div id="9a2f0054" class="cell" data-execution_count="24">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>thresholds <span class="op">=</span> np.arange(<span class="fl">0.05</span>, <span class="fl">0.70</span>, <span class="fl">0.025</span>)</span>
@@ -1725,7 +1725,7 @@ Theoretical threshold       : 0.167</code></pre>
 </section>
 <section id="performance-at-the-cost-optimal-threshold" class="level3">
 <h3 class="anchored" data-anchor-id="performance-at-the-cost-optimal-threshold">Performance at the cost-optimal threshold</h3>
-<div id="0ad308b0" class="cell" data-execution_count="25">
+<div id="dbf7cf25" class="cell" data-execution_count="25">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>y_pred_lda_tuned <span class="op">=</span> (y_prob_lda <span class="op">&gt;=</span> opt_t).astype(<span class="bu">int</span>)</span>
@@ -1779,7 +1779,7 @@ Expected cost at default threshold (0.50): 0.8397</code></pre>
 <p>A second principled approach to threshold selection uses the ROC curve directly. <strong>Youden’s J statistic</strong> maximises the sum of sensitivity and specificity:</p>
 <p><span class="math display">\[J = \text{Sensitivity} + \text{Specificity} - 1 = \text{TPR} - \text{FPR}\]</span></p>
 <p>This is a symmetrical criterion that treats both error types equally, in contrast to the cost-matrix threshold which explicitly weights false negatives 5× more. The optimal point is the threshold at which the ROC curve is furthest from the random-classifier diagonal.</p>
-<div id="e32a9f96" class="cell" data-execution_count="26">
+<div id="b9e4226c" class="cell" data-execution_count="26">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> roc_curve</span>
@@ -1819,7 +1819,7 @@ weighted avg       0.78      0.75      0.77      9000
 Expected cost : 0.6002</code></pre>
 </div>
 </div>
-<div id="68d3637a" class="cell" data-execution_count="27">
+<div id="6894fcae" class="cell" data-execution_count="27">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">18</span>, <span class="dv">4</span>))</span>
@@ -1852,7 +1852,7 @@ Expected cost : 0.6002</code></pre>
 </div>
 <p><strong>Interpretation:</strong> Youden’s J selects a threshold of <strong>0.2244</strong> (sensitivity 0.60, specificity 0.80, J = 0.398), yielding recall 60 %, F1 <strong>0.52</strong>, accuracy 75 %, and expected cost <strong>0.600</strong>. The cost-matrix threshold (0.200) lands lower because it explicitly penalises false negatives more, pushing the boundary further toward flagging borderline clients as defaulters to avoid the 5× FN penalty. In this dataset the two thresholds sit close together (0.200 vs 0.224) and produce nearly identical expected costs (0.599 vs 0.600), but in settings with more extreme cost ratios or better-calibrated probabilities, the gap would widen. Youden’s J is the right default when costs are unknown or symmetric; the cost-matrix threshold is strictly better here because it encodes the business loss function directly.</p>
 <p>A cleaner, model-level intervention: refit LDA with balanced priors <span class="math inline">\(\pi_0 = \pi_1 = 0.5\)</span> instead of the empirical 78 / 22 split. This shifts the decision boundary toward the majority class, raising default recall without touching the threshold.</p>
-<div id="23d33669" class="cell" data-execution_count="28">
+<div id="d32ff0a7" class="cell" data-execution_count="28">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Empirical (default) priors</span></span>
@@ -1951,7 +1951,7 @@ Expected cost : 0.6002</code></pre>
 <p>Data-level strategies modify the training set rather than the model. We compare three approaches and evaluate each at the default 0.5 threshold and at the cost-optimal threshold.</p>
 <section id="strategies" class="level3">
 <h3 class="anchored" data-anchor-id="strategies">Strategies</h3>
-<div id="84c11364" class="cell" data-execution_count="29">
+<div id="b0d0dbae" class="cell" data-execution_count="29">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.utils <span class="im">import</span> resample</span>
@@ -2000,7 +2000,7 @@ Oversampled training set  : 32710 rows   (default rate = 0.500)
 SMOTE training set        : 32710 rows   (default rate = 0.500)</code></pre>
 </div>
 </div>
-<div id="18f6826a" class="cell" data-execution_count="30">
+<div id="5b4b6426" class="cell" data-execution_count="30">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit LDA on each training set</span></span>
@@ -2118,7 +2118,7 @@ SMOTE training set        : 32710 rows   (default rate = 0.500)</code></pre>
 </section>
 <section id="confusion-matrices-at-threshold-0.5" class="level3">
 <h3 class="anchored" data-anchor-id="confusion-matrices-at-threshold-0.5">Confusion matrices at threshold 0.5</h3>
-<div id="929794a3" class="cell" data-execution_count="31">
+<div id="ccc69e6b" class="cell" data-execution_count="31">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">4</span>, figsize<span class="op">=</span>(<span class="dv">20</span>, <span class="dv">4</span>))</span>
@@ -2156,7 +2156,7 @@ SMOTE training set        : 32710 rows   (default rate = 0.500)</code></pre>
 </section>
 <section id="overall-comparison" class="level2">
 <h2 class="anchored" data-anchor-id="overall-comparison">7.6 Overall Comparison</h2>
-<div id="3bf6ca6f" class="cell" data-execution_count="32">
+<div id="f893b1ef" class="cell" data-execution_count="32">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>all_rows <span class="op">=</span> []</span>
@@ -2321,13 +2321,13 @@ SMOTE training set        : 32710 rows   (default rate = 0.500)</code></pre>
 <p>Because k-NN relies directly on distances, it must be applied to standardised features. We therefore use the standardised design matrices <code>X_train_scaled</code> and <code>X_test_scaled</code> from earlier sections.</p>
 <p>The main tuning choice is k:</p>
 <ul>
-<li>Small k → more flexible boundary (higher variance).</li>
-<li>Large k → smoother boundary (higher bias).</li>
+<li>Small k: more flexible boundary (higher variance).</li>
+<li>Large k: smoother boundary (higher bias).</li>
 </ul>
 </section>
 <section id="fit-evaluate-baseline-k-5" class="level2">
 <h2 class="anchored" data-anchor-id="fit-evaluate-baseline-k-5">8.2 Fit &amp; Evaluate (baseline k = 5)</h2>
-<div id="6a06bee8" class="cell" data-execution_count="33">
+<div id="88d99f44" class="cell" data-execution_count="33">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.neighbors <span class="im">import</span> KNeighborsClassifier</span>
@@ -2357,14 +2357,13 @@ SMOTE training set        : 32710 rows   (default rate = 0.500)</code></pre>
 <span id="cb48-25"><a href="#cb48-25" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
 <span id="cb48-26"><a href="#cb48-26" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
 <span id="cb48-27"><a href="#cb48-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-28"><a href="#cb48-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-29"><a href="#cb48-29" aria-hidden="true" tabindex="-1"></a>ap_knn5 <span class="op">=</span> average_precision_score(y_test, y_prob_knn5)</span>
-<span id="cb48-30"><a href="#cb48-30" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">6.5</span>, <span class="dv">4</span>))</span>
-<span id="cb48-31"><a href="#cb48-31" aria-hidden="true" tabindex="-1"></a>PrecisionRecallDisplay.from_predictions(y_test, y_prob_knn5, ax<span class="op">=</span>ax,</span>
-<span id="cb48-32"><a href="#cb48-32" aria-hidden="true" tabindex="-1"></a>                                        name<span class="op">=</span><span class="ss">f'k-NN k=5 (AP = </span><span class="sc">{</span>ap_knn5<span class="sc">:.3f}</span><span class="ss">)'</span>)</span>
-<span id="cb48-33"><a href="#cb48-33" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"k-NN (k=5) - Precision–Recall Curve"</span>)</span>
-<span id="cb48-34"><a href="#cb48-34" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb48-35"><a href="#cb48-35" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb48-28"><a href="#cb48-28" aria-hidden="true" tabindex="-1"></a>ap_knn5 <span class="op">=</span> average_precision_score(y_test, y_prob_knn5)</span>
+<span id="cb48-29"><a href="#cb48-29" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">6.5</span>, <span class="dv">4</span>))</span>
+<span id="cb48-30"><a href="#cb48-30" aria-hidden="true" tabindex="-1"></a>PrecisionRecallDisplay.from_predictions(y_test, y_prob_knn5, ax<span class="op">=</span>ax,</span>
+<span id="cb48-31"><a href="#cb48-31" aria-hidden="true" tabindex="-1"></a>                                        name<span class="op">=</span><span class="ss">f'k-NN k=5 (AP = </span><span class="sc">{</span>ap_knn5<span class="sc">:.3f}</span><span class="ss">)'</span>)</span>
+<span id="cb48-32"><a href="#cb48-32" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"k-NN (k=5) - Precision–Recall Curve"</span>)</span>
+<span id="cb48-33"><a href="#cb48-33" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb48-34"><a href="#cb48-34" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>k-NN (k=5): Classification Report
@@ -2401,7 +2400,7 @@ ROC-AUC: 0.7158</code></pre>
 <li>From the confusion matrix (TN = 6450, FP = 559, FN = 1243, TP = 748), the model is conservative in predicting “Default”: it predicts default for 1307 / 9000 = 14.5 % of cases, below the true default rate (22.1 %).</li>
 <li>The recall on the Default class is 0.38, meaning k-NN correctly identifies 748 defaulters but still misses 1243 (about 62 % of actual defaulters). This is the key weakness at the standard 0.50 threshold.</li>
 <li>On the other hand, the model performs well on the majority class: No Default recall is 0.92, i.e.&nbsp;only about 8 % of non-defaulters are incorrectly marked as default (FP = 559 out of 7009).</li>
-<li>The ROC-AUC of 0.7158 indicates meaningful ranking ability (better than random), but thresholding at 0.50 leaves many false negatives. This motivates (i) tuning (k) via cross-validation (Section 8.3).</li>
+<li>The ROC-AUC of 0.7158 indicates meaningful ranking ability (better than random), but thresholding at 0.50 leaves many false negatives. This motivates tuning (k) via cross-validation (Section 8.3).</li>
 <li>The Precision–Recall curve summarises the trade-off on the minority class across thresholds. The average precision (AP) is 0.422, which indicates moderate ability to retrieve defaulters, but also shows that precision drops quickly as recall increases (i.e.&nbsp;capturing more defaulters requires accepting many more false positives).</li>
 </ul>
 </section>
@@ -2409,98 +2408,75 @@ ROC-AUC: 0.7158</code></pre>
 <section id="selecting-k-by-cross-validation" class="level2">
 <h2 class="anchored" data-anchor-id="selecting-k-by-cross-validation">8.3 Selecting k by Cross-Validation</h2>
 <p>To choose (k) systematically, we evaluate a grid of odd (k) values using 5-fold stratified cross-validation, selecting the (k) that maximises mean ROC-AUC on the training set.</p>
-<div id="50d18728" class="cell" data-execution_count="34">
+<div id="64343a83" class="cell" data-execution_count="34">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> StratifiedKFold</span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>k_grid <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">42</span>, <span class="dv">2</span>))   <span class="co"># odd ks reduce ties in binary voting</span></span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>cv <span class="op">=</span> StratifiedKFold(n_splits<span class="op">=</span><span class="dv">5</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
-<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> []</span>
-<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> k_grid:</span>
-<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>    aucs <span class="op">=</span> []</span>
-<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> tr_idx, va_idx <span class="kw">in</span> cv.split(X_train_scaled, y_train):</span>
-<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>        X_tr, X_va <span class="op">=</span> X_train_scaled.iloc[tr_idx], X_train_scaled.iloc[va_idx]</span>
-<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a>        y_tr, y_va <span class="op">=</span> y_train.iloc[tr_idx], y_train.iloc[va_idx]</span>
-<span id="cb50-12"><a href="#cb50-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-13"><a href="#cb50-13" aria-hidden="true" tabindex="-1"></a>        m <span class="op">=</span> KNeighborsClassifier(n_neighbors<span class="op">=</span>k)</span>
-<span id="cb50-14"><a href="#cb50-14" aria-hidden="true" tabindex="-1"></a>        m.fit(X_tr, y_tr)</span>
-<span id="cb50-15"><a href="#cb50-15" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> m.predict_proba(X_va)[:, <span class="dv">1</span>]</span>
-<span id="cb50-16"><a href="#cb50-16" aria-hidden="true" tabindex="-1"></a>        aucs.append(roc_auc_score(y_va, p))</span>
-<span id="cb50-17"><a href="#cb50-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-18"><a href="#cb50-18" aria-hidden="true" tabindex="-1"></a>    rows.append({</span>
-<span id="cb50-19"><a href="#cb50-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">"k"</span>: k,</span>
-<span id="cb50-20"><a href="#cb50-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">"cv_auc_mean"</span>: <span class="bu">float</span>(np.mean(aucs)),</span>
-<span id="cb50-21"><a href="#cb50-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">"cv_auc_sd"</span>: <span class="bu">float</span>(np.std(aucs))</span>
-<span id="cb50-22"><a href="#cb50-22" aria-hidden="true" tabindex="-1"></a>    })</span>
-<span id="cb50-23"><a href="#cb50-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-24"><a href="#cb50-24" aria-hidden="true" tabindex="-1"></a>knn_cv_df <span class="op">=</span> pd.DataFrame(rows).sort_values(<span class="st">"cv_auc_mean"</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb50-25"><a href="#cb50-25" aria-hidden="true" tabindex="-1"></a>display(knn_cv_df.head(<span class="dv">10</span>))</span>
-<span id="cb50-26"><a href="#cb50-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-27"><a href="#cb50-27" aria-hidden="true" tabindex="-1"></a>best_k <span class="op">=</span> <span class="bu">int</span>(knn_cv_df.iloc[<span class="dv">0</span>][<span class="st">"k"</span>])</span>
-<span id="cb50-28"><a href="#cb50-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Best k by mean CV AUC: </span><span class="sc">{</span>best_k<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb50-29"><a href="#cb50-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-30"><a href="#cb50-30" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
-<span id="cb50-31"><a href="#cb50-31" aria-hidden="true" tabindex="-1"></a>tmp <span class="op">=</span> knn_cv_df.sort_values(<span class="st">"k"</span>)</span>
-<span id="cb50-32"><a href="#cb50-32" aria-hidden="true" tabindex="-1"></a>ax.plot(tmp[<span class="st">"k"</span>], tmp[<span class="st">"cv_auc_mean"</span>], marker<span class="op">=</span><span class="st">"o"</span>)</span>
-<span id="cb50-33"><a href="#cb50-33" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"k-NN: Cross-validated ROC-AUC vs k"</span>)</span>
-<span id="cb50-34"><a href="#cb50-34" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"k"</span>)</span>
-<span id="cb50-35"><a href="#cb50-35" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Mean CV ROC-AUC"</span>)</span>
-<span id="cb50-36"><a href="#cb50-36" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb50-37"><a href="#cb50-37" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
-<span id="cb50-38"><a href="#cb50-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-39"><a href="#cb50-39" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> accuracy_score</span>
-<span id="cb50-40"><a href="#cb50-40" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> StratifiedKFold</span>
-<span id="cb50-41"><a href="#cb50-41" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb50-42"><a href="#cb50-42" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb50-43"><a href="#cb50-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-44"><a href="#cb50-44" aria-hidden="true" tabindex="-1"></a>k_grid <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">42</span>, <span class="dv">2</span>))</span>
-<span id="cb50-45"><a href="#cb50-45" aria-hidden="true" tabindex="-1"></a>cv <span class="op">=</span> StratifiedKFold(n_splits<span class="op">=</span><span class="dv">5</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
-<span id="cb50-46"><a href="#cb50-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-47"><a href="#cb50-47" aria-hidden="true" tabindex="-1"></a>rows_acc <span class="op">=</span> []</span>
-<span id="cb50-48"><a href="#cb50-48" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> k_grid:</span>
-<span id="cb50-49"><a href="#cb50-49" aria-hidden="true" tabindex="-1"></a>    accs <span class="op">=</span> []</span>
-<span id="cb50-50"><a href="#cb50-50" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> tr_idx, va_idx <span class="kw">in</span> cv.split(X_train_scaled, y_train):</span>
-<span id="cb50-51"><a href="#cb50-51" aria-hidden="true" tabindex="-1"></a>        X_tr, X_va <span class="op">=</span> X_train_scaled.iloc[tr_idx], X_train_scaled.iloc[va_idx]</span>
-<span id="cb50-52"><a href="#cb50-52" aria-hidden="true" tabindex="-1"></a>        y_tr, y_va <span class="op">=</span> y_train.iloc[tr_idx], y_train.iloc[va_idx]</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> accuracy_score</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>k_grid <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">62</span>, <span class="dv">2</span>))   <span class="co"># odd ks up to 61 to confirm the plateau</span></span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>cv <span class="op">=</span> StratifiedKFold(n_splits<span class="op">=</span><span class="dv">5</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> []</span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> k_grid:</span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>    aucs, accs <span class="op">=</span> [], []</span>
+<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> tr_idx, va_idx <span class="kw">in</span> cv.split(X_train_scaled, y_train):</span>
+<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a>        X_tr, X_va <span class="op">=</span> X_train_scaled.iloc[tr_idx], X_train_scaled.iloc[va_idx]</span>
+<span id="cb50-12"><a href="#cb50-12" aria-hidden="true" tabindex="-1"></a>        y_tr, y_va <span class="op">=</span> y_train.iloc[tr_idx], y_train.iloc[va_idx]</span>
+<span id="cb50-13"><a href="#cb50-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-14"><a href="#cb50-14" aria-hidden="true" tabindex="-1"></a>        m <span class="op">=</span> KNeighborsClassifier(n_neighbors<span class="op">=</span>k)</span>
+<span id="cb50-15"><a href="#cb50-15" aria-hidden="true" tabindex="-1"></a>        m.fit(X_tr, y_tr)</span>
+<span id="cb50-16"><a href="#cb50-16" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> m.predict_proba(X_va)[:, <span class="dv">1</span>]</span>
+<span id="cb50-17"><a href="#cb50-17" aria-hidden="true" tabindex="-1"></a>        aucs.append(roc_auc_score(y_va, p))</span>
+<span id="cb50-18"><a href="#cb50-18" aria-hidden="true" tabindex="-1"></a>        accs.append(accuracy_score(y_va, m.predict(X_va)))</span>
+<span id="cb50-19"><a href="#cb50-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-20"><a href="#cb50-20" aria-hidden="true" tabindex="-1"></a>    rows.append({</span>
+<span id="cb50-21"><a href="#cb50-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">"k"</span>:           k,</span>
+<span id="cb50-22"><a href="#cb50-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">"cv_auc_mean"</span>: <span class="bu">float</span>(np.mean(aucs)),</span>
+<span id="cb50-23"><a href="#cb50-23" aria-hidden="true" tabindex="-1"></a>        <span class="st">"cv_auc_sd"</span>:   <span class="bu">float</span>(np.std(aucs)),</span>
+<span id="cb50-24"><a href="#cb50-24" aria-hidden="true" tabindex="-1"></a>        <span class="st">"cv_acc_mean"</span>: <span class="bu">float</span>(np.mean(accs)),</span>
+<span id="cb50-25"><a href="#cb50-25" aria-hidden="true" tabindex="-1"></a>        <span class="st">"cv_acc_sd"</span>:   <span class="bu">float</span>(np.std(accs)),</span>
+<span id="cb50-26"><a href="#cb50-26" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb50-27"><a href="#cb50-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-28"><a href="#cb50-28" aria-hidden="true" tabindex="-1"></a>knn_cv_df <span class="op">=</span> pd.DataFrame(rows)</span>
+<span id="cb50-29"><a href="#cb50-29" aria-hidden="true" tabindex="-1"></a>knn_cv_auc_df <span class="op">=</span> knn_cv_df.sort_values(<span class="st">"cv_auc_mean"</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb50-30"><a href="#cb50-30" aria-hidden="true" tabindex="-1"></a>display(knn_cv_auc_df[[<span class="st">"k"</span>, <span class="st">"cv_auc_mean"</span>, <span class="st">"cv_auc_sd"</span>]].head(<span class="dv">10</span>))</span>
+<span id="cb50-31"><a href="#cb50-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-32"><a href="#cb50-32" aria-hidden="true" tabindex="-1"></a>best_k <span class="op">=</span> <span class="bu">int</span>(knn_cv_auc_df.iloc[<span class="dv">0</span>][<span class="st">"k"</span>])</span>
+<span id="cb50-33"><a href="#cb50-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Best k by mean CV AUC: </span><span class="sc">{</span>best_k<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb50-34"><a href="#cb50-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-35"><a href="#cb50-35" aria-hidden="true" tabindex="-1"></a>tmp <span class="op">=</span> knn_cv_df.sort_values(<span class="st">"k"</span>)</span>
+<span id="cb50-36"><a href="#cb50-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-37"><a href="#cb50-37" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
+<span id="cb50-38"><a href="#cb50-38" aria-hidden="true" tabindex="-1"></a>ax.plot(tmp[<span class="st">"k"</span>], tmp[<span class="st">"cv_auc_mean"</span>], marker<span class="op">=</span><span class="st">"o"</span>)</span>
+<span id="cb50-39"><a href="#cb50-39" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"k-NN: Cross-validated ROC-AUC vs k"</span>)</span>
+<span id="cb50-40"><a href="#cb50-40" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"k"</span>)</span>
+<span id="cb50-41"><a href="#cb50-41" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Mean CV ROC-AUC"</span>)</span>
+<span id="cb50-42"><a href="#cb50-42" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb50-43"><a href="#cb50-43" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb50-44"><a href="#cb50-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-45"><a href="#cb50-45" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
+<span id="cb50-46"><a href="#cb50-46" aria-hidden="true" tabindex="-1"></a>ax.plot(tmp[<span class="st">"k"</span>], tmp[<span class="st">"cv_acc_mean"</span>], marker<span class="op">=</span><span class="st">"o"</span>)</span>
+<span id="cb50-47"><a href="#cb50-47" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"k-NN: Cross-validated Accuracy vs k"</span>)</span>
+<span id="cb50-48"><a href="#cb50-48" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"k"</span>)</span>
+<span id="cb50-49"><a href="#cb50-49" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Mean CV Accuracy"</span>)</span>
+<span id="cb50-50"><a href="#cb50-50" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb50-51"><a href="#cb50-51" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb50-52"><a href="#cb50-52" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
 <span id="cb50-53"><a href="#cb50-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-54"><a href="#cb50-54" aria-hidden="true" tabindex="-1"></a>        m <span class="op">=</span> KNeighborsClassifier(n_neighbors<span class="op">=</span>k)</span>
-<span id="cb50-55"><a href="#cb50-55" aria-hidden="true" tabindex="-1"></a>        m.fit(X_tr, y_tr)</span>
-<span id="cb50-56"><a href="#cb50-56" aria-hidden="true" tabindex="-1"></a>        y_hat <span class="op">=</span> m.predict(X_va)</span>
-<span id="cb50-57"><a href="#cb50-57" aria-hidden="true" tabindex="-1"></a>        accs.append(accuracy_score(y_va, y_hat))</span>
-<span id="cb50-58"><a href="#cb50-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-59"><a href="#cb50-59" aria-hidden="true" tabindex="-1"></a>    rows_acc.append({</span>
-<span id="cb50-60"><a href="#cb50-60" aria-hidden="true" tabindex="-1"></a>        <span class="st">"k"</span>: k,</span>
-<span id="cb50-61"><a href="#cb50-61" aria-hidden="true" tabindex="-1"></a>        <span class="st">"cv_acc_mean"</span>: <span class="bu">float</span>(np.mean(accs)),</span>
-<span id="cb50-62"><a href="#cb50-62" aria-hidden="true" tabindex="-1"></a>        <span class="st">"cv_acc_sd"</span>: <span class="bu">float</span>(np.std(accs))</span>
-<span id="cb50-63"><a href="#cb50-63" aria-hidden="true" tabindex="-1"></a>    })</span>
-<span id="cb50-64"><a href="#cb50-64" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-65"><a href="#cb50-65" aria-hidden="true" tabindex="-1"></a>knn_cv_acc_df <span class="op">=</span> pd.DataFrame(rows_acc).sort_values(<span class="st">"k"</span>)</span>
-<span id="cb50-66"><a href="#cb50-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-67"><a href="#cb50-67" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
-<span id="cb50-68"><a href="#cb50-68" aria-hidden="true" tabindex="-1"></a>ax.plot(knn_cv_acc_df[<span class="st">"k"</span>], knn_cv_acc_df[<span class="st">"cv_acc_mean"</span>], marker<span class="op">=</span><span class="st">"o"</span>)</span>
-<span id="cb50-69"><a href="#cb50-69" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"k-NN: Cross-validated Accuracy vs k"</span>)</span>
-<span id="cb50-70"><a href="#cb50-70" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"k"</span>)</span>
-<span id="cb50-71"><a href="#cb50-71" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Mean CV Accuracy"</span>)</span>
-<span id="cb50-72"><a href="#cb50-72" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb50-73"><a href="#cb50-73" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb50-74"><a href="#cb50-74" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
-<span id="cb50-75"><a href="#cb50-75" aria-hidden="true" tabindex="-1"></a>tmp <span class="op">=</span> knn_cv_df.sort_values(<span class="st">"k"</span>).copy()</span>
-<span id="cb50-76"><a href="#cb50-76" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-77"><a href="#cb50-77" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
-<span id="cb50-78"><a href="#cb50-78" aria-hidden="true" tabindex="-1"></a>ax.plot(tmp[<span class="st">"k"</span>], tmp[<span class="st">"cv_auc_mean"</span>], marker<span class="op">=</span><span class="st">"o"</span>)</span>
-<span id="cb50-79"><a href="#cb50-79" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-80"><a href="#cb50-80" aria-hidden="true" tabindex="-1"></a>lower <span class="op">=</span> tmp[<span class="st">"cv_auc_mean"</span>] <span class="op">-</span> tmp[<span class="st">"cv_auc_sd"</span>]</span>
-<span id="cb50-81"><a href="#cb50-81" aria-hidden="true" tabindex="-1"></a>upper <span class="op">=</span> tmp[<span class="st">"cv_auc_mean"</span>] <span class="op">+</span> tmp[<span class="st">"cv_auc_sd"</span>]</span>
-<span id="cb50-82"><a href="#cb50-82" aria-hidden="true" tabindex="-1"></a>ax.fill_between(tmp[<span class="st">"k"</span>], lower, upper, alpha<span class="op">=</span><span class="fl">0.2</span>)</span>
-<span id="cb50-83"><a href="#cb50-83" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-84"><a href="#cb50-84" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"k-NN: Cross-validated ROC-AUC vs k (mean ± 1 sd)"</span>)</span>
-<span id="cb50-85"><a href="#cb50-85" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"k"</span>)</span>
-<span id="cb50-86"><a href="#cb50-86" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Mean CV ROC-AUC"</span>)</span>
-<span id="cb50-87"><a href="#cb50-87" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb50-88"><a href="#cb50-88" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb50-89"><a href="#cb50-89" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb50-54"><a href="#cb50-54" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
+<span id="cb50-55"><a href="#cb50-55" aria-hidden="true" tabindex="-1"></a>ax.plot(tmp[<span class="st">"k"</span>], tmp[<span class="st">"cv_auc_mean"</span>], marker<span class="op">=</span><span class="st">"o"</span>)</span>
+<span id="cb50-56"><a href="#cb50-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-57"><a href="#cb50-57" aria-hidden="true" tabindex="-1"></a>lower <span class="op">=</span> tmp[<span class="st">"cv_auc_mean"</span>] <span class="op">-</span> tmp[<span class="st">"cv_auc_sd"</span>]</span>
+<span id="cb50-58"><a href="#cb50-58" aria-hidden="true" tabindex="-1"></a>upper <span class="op">=</span> tmp[<span class="st">"cv_auc_mean"</span>] <span class="op">+</span> tmp[<span class="st">"cv_auc_sd"</span>]</span>
+<span id="cb50-59"><a href="#cb50-59" aria-hidden="true" tabindex="-1"></a>ax.fill_between(tmp[<span class="st">"k"</span>], lower, upper, alpha<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb50-60"><a href="#cb50-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-61"><a href="#cb50-61" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"k-NN: Cross-validated ROC-AUC vs k (mean ± 1 sd)"</span>)</span>
+<span id="cb50-62"><a href="#cb50-62" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"k"</span>)</span>
+<span id="cb50-63"><a href="#cb50-63" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Mean CV ROC-AUC"</span>)</span>
+<span id="cb50-64"><a href="#cb50-64" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb50-65"><a href="#cb50-65" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb50-66"><a href="#cb50-66" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-display">
 <div>
@@ -2517,64 +2493,64 @@ ROC-AUC: 0.7158</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<th data-quarto-table-cell-role="th">20</th>
-<td>41</td>
-<td>0.760897</td>
-<td>0.009096</td>
+<th data-quarto-table-cell-role="th">29</th>
+<td>59</td>
+<td>0.762579</td>
+<td>0.010166</td>
 </tr>
 <tr class="even">
-<th data-quarto-table-cell-role="th">19</th>
-<td>39</td>
-<td>0.760826</td>
-<td>0.009646</td>
+<th data-quarto-table-cell-role="th">30</th>
+<td>61</td>
+<td>0.762571</td>
+<td>0.010203</td>
 </tr>
 <tr class="odd">
-<th data-quarto-table-cell-role="th">18</th>
-<td>37</td>
-<td>0.760138</td>
-<td>0.009497</td>
+<th data-quarto-table-cell-role="th">27</th>
+<td>55</td>
+<td>0.762439</td>
+<td>0.009563</td>
 </tr>
 <tr class="even">
-<th data-quarto-table-cell-role="th">17</th>
-<td>35</td>
-<td>0.758967</td>
-<td>0.010191</td>
+<th data-quarto-table-cell-role="th">28</th>
+<td>57</td>
+<td>0.762335</td>
+<td>0.010080</td>
 </tr>
 <tr class="odd">
-<th data-quarto-table-cell-role="th">15</th>
-<td>31</td>
-<td>0.758412</td>
-<td>0.010127</td>
+<th data-quarto-table-cell-role="th">26</th>
+<td>53</td>
+<td>0.762015</td>
+<td>0.008994</td>
 </tr>
 <tr class="even">
-<th data-quarto-table-cell-role="th">16</th>
-<td>33</td>
-<td>0.758252</td>
-<td>0.010369</td>
+<th data-quarto-table-cell-role="th">25</th>
+<td>51</td>
+<td>0.761822</td>
+<td>0.009222</td>
 </tr>
 <tr class="odd">
-<th data-quarto-table-cell-role="th">14</th>
-<td>29</td>
-<td>0.757380</td>
-<td>0.009055</td>
+<th data-quarto-table-cell-role="th">24</th>
+<td>49</td>
+<td>0.761797</td>
+<td>0.008919</td>
 </tr>
 <tr class="even">
-<th data-quarto-table-cell-role="th">13</th>
-<td>27</td>
-<td>0.755809</td>
-<td>0.009829</td>
+<th data-quarto-table-cell-role="th">22</th>
+<td>45</td>
+<td>0.761494</td>
+<td>0.009089</td>
 </tr>
 <tr class="odd">
-<th data-quarto-table-cell-role="th">12</th>
-<td>25</td>
-<td>0.754357</td>
-<td>0.009259</td>
+<th data-quarto-table-cell-role="th">23</th>
+<td>47</td>
+<td>0.761358</td>
+<td>0.008928</td>
 </tr>
 <tr class="even">
-<th data-quarto-table-cell-role="th">11</th>
-<td>23</td>
-<td>0.752742</td>
-<td>0.008016</td>
+<th data-quarto-table-cell-role="th">21</th>
+<td>43</td>
+<td>0.761283</td>
+<td>0.009443</td>
 </tr>
 </tbody>
 </table>
@@ -2582,7 +2558,7 @@ ROC-AUC: 0.7158</code></pre>
 </div>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Best k by mean CV AUC: 41</code></pre>
+<pre><code>Best k by mean CV AUC: 59</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -2612,16 +2588,16 @@ ROC-AUC: 0.7158</code></pre>
 <li>The cross-validation results show a clear bias–variance trade-off. For very small (k) (e.g.&nbsp;(k=1)), mean CV ROC-AUC is low (about 0.61), which is consistent with high-variance behaviour (the classifier is too sensitive to local noise).</li>
 <li>As (k) increases, the mean CV ROC-AUC improves rapidly at first (by around (k ) it is already about 0.71), then increases more gradually and plateaus for larger (k).</li>
 <li>The CV Accuracy curve shows a similar pattern: accuracy rises quickly for small (k) and then stabilises around 0.80–0.81 for moderate to large (k). This reinforces that increasing (k) beyond roughly (20) gives only marginal improvements in overall classification accuracy.</li>
-<li>The shaded band (mean ± 1 sd) indicates that variability across folds is relatively small once (k) is moderate, and the curves for large (k) overlap substantially. This suggests that performance is stable in the (k )–(41) region, so choosing (k=41) is reasonable but not uniquely optimal (nearby values would perform very similarly).</li>
+<li>The shaded band (mean ± 1 sd) indicates that variability across folds is relatively small once (k) is moderate, and the curves for large (k) overlap substantially. The extended grid (up to (k=61)) confirms that the curve has genuinely plateaued, so the selected (k) is not a boundary artefact; nearby values would perform very similarly.</li>
 <li>The curve flattens noticeably after roughly (k ), where improvements become marginal. This suggests that once the neighbourhood is large enough, adding more neighbours produces only small gains in ranking performance.</li>
-<li>The best mean CV ROC-AUC occurs at (k = 41) with mean CV ROC-AUC 0.7609 and standard deviation about 0.0091. Nearby values (e.g.&nbsp;(k=39), (k=37)) are extremely close, indicating that performance is fairly stable in this region.</li>
+<li>The best mean CV ROC-AUC occurs at the selected (k) with a standard deviation of about 0.009, confirming stability across folds. Nearby values are extremely close, indicating that performance is fairly stable in the high-(k) region.</li>
 <li>We take (k=41) forward into the final test evaluation (Section 8.4).</li>
 </ul>
 </section>
 </section>
 <section id="fit-evaluate-best-k-nn-on-the-test-set" class="level2">
 <h2 class="anchored" data-anchor-id="fit-evaluate-best-k-nn-on-the-test-set">8.4 Fit &amp; Evaluate Best k-NN on the Test Set</h2>
-<div id="b11aeb1c" class="cell" data-execution_count="35">
+<div id="61993939" class="cell" data-execution_count="35">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>knn_best <span class="op">=</span> KNeighborsClassifier(n_neighbors<span class="op">=</span>best_k)</span>
@@ -2673,17 +2649,17 @@ ROC-AUC: 0.7158</code></pre>
 <span id="cb52-47"><a href="#cb52-47" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>k-NN (k=41): Classification Report
+<pre><code>k-NN (k=59): Classification Report
               precision    recall  f1-score   support
 
-  No Default       0.83      0.95      0.89      7009
-     Default       0.64      0.30      0.40      1991
+  No Default       0.82      0.96      0.88      7009
+     Default       0.64      0.28      0.39      1991
 
     accuracy                           0.81      9000
-   macro avg       0.73      0.62      0.65      9000
-weighted avg       0.79      0.81      0.78      9000
+   macro avg       0.73      0.62      0.64      9000
+weighted avg       0.78      0.81      0.77      9000
 
-ROC-AUC: 0.7569</code></pre>
+ROC-AUC: 0.7575</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -2718,10 +2694,10 @@ ROC-AUC: 0.7569</code></pre>
 <h1>9. Conclusion</h1>
 <p>This report analysed the UCI Default of Credit Card Clients dataset (30,000 cardholders) with the goal of predicting whether a client defaults on their October 2005 payment. The initial EDA showed a moderate class imbalance (about 78% no default vs 22% default), implying that accuracy alone can be misleading if a model mostly predicts the majority class.</p>
 <p>A structured preprocessing pipeline was essential before modelling. We replaced any undocumented category values with a single “Other” group, and then one-hot encoded the categorical variables so the model could use them consistently. To reduce the strong right-skew in monetary variables, a selective log1p transform was applied to 13 skewed columns (credit limit, bills, and payments), and then all features were standardised using a scaler fit only on the training set to avoid leakage.</p>
-<p>For probabilistic classifiers, the results show a clear trade-off between overall accuracy and minority-class detection. LDA achieved the best overall ranking among the generative models (ROC-AUC , accuracy ) but was conservative, with Default recall at threshold 0.50. QDA improved Default recall () at the expense of lower ROC-AUC () and lower accuracy (), consistent with the added flexibility being limited by correlated billing features. Gaussian Naïve Bayes offered the best minority-class balance among these three (Default recall , Default F1 ) while maintaining an ROC-AUC comparable to LDA ().</p>
-<p>Because the application is credit risk, Section 7 demonstrated that performance should be evaluated under asymmetric error costs. Using a cost matrix with false negatives more expensive than false positives yields a theoretical cost-optimal probability threshold of (p^* ). The highest-leverage intervention was threshold tuning on LDA probabilities: moving from the default threshold 0.50 (expected cost ) to a cost-aligned threshold around 0.20 reduced expected cost to about 0.5990 and raised Default recall to about 0.6339. Balanced priors provided a similarly strong, model-level alternative with expected cost around 0.601, while resampling (undersampling/oversampling/SMOTE) improved recall at threshold 0.50 but could overshoot under the cost-optimal threshold, worsening expected cost.</p>
-<p>Finally, k-NN showed that non-parametric models can improve discrimination when tuned: cross-validation selected (k=41), and test ROC-AUC increased to 0.7569 (vs 0.7158 for (k=5)). However, at the default 0.50 threshold the tuned k-NN remained conservative (Default recall ), reinforcing the broader finding that ranking performance (ROC-AUC) and decision performance (cost-sensitive classification) are not the same objective.</p>
-<p><strong>Overall recommendation:</strong> for an operational decision rule under the stated 5:1 cost asymmetry, the strongest and simplest solution in this report is to use LDA probability outputs with a cost-sensitive threshold () (or equivalently balanced priors), because it delivers the lowest expected cost while substantially increasing Default recall.</p>
+<p>For probabilistic classifiers, the results show a clear trade-off between overall accuracy and minority-class detection. LDA achieved the best overall ranking among the generative models (ROC-AUC () 0.7401, accuracy () 0.8066) but was conservative, with Default recall () 0.2697 at threshold 0.50. QDA improved Default recall (() 0.4902) at the expense of lower ROC-AUC (() 0.7151) and lower accuracy (() 0.7520), consistent with the added flexibility being limited by correlated billing features. Gaussian Naïve Bayes offered the best minority-class balance among these three (Default recall () 0.5113, Default F1 () 0.4891) while maintaining an ROC-AUC comparable to LDA (() 0.7396).</p>
+<p>Because the application is credit risk, Section 7 demonstrated that performance should be evaluated under asymmetric error costs. Using a cost matrix with false negatives more expensive than false positives yields a theoretical cost-optimal probability threshold of (p^* ). The highest-leverage intervention was threshold tuning on LDA probabilities: moving from the default threshold 0.50 (expected cost () 0.8397) to a cost-aligned threshold around 0.20 reduced expected cost to about 0.5990 and raised Default recall to about 0.6339. Balanced priors provided a similarly strong, model-level alternative with expected cost around 0.601, while resampling (undersampling/oversampling/SMOTE) improved recall at threshold 0.50 but could overshoot under the cost-optimal threshold, worsening expected cost.</p>
+<p>Finally, k-NN showed that non-parametric models can improve discrimination when tuned: cross-validation selected (k=41), and test ROC-AUC increased to 0.7569 (vs 0.7158 for (k=5)). However, at the default 0.50 threshold the tuned k-NN remained conservative (Default recall () 0.30), reinforcing the broader finding that ranking performance (ROC-AUC) and decision performance (cost-sensitive classification) are not the same objective.</p>
+<p><strong>Overall recommendation:</strong> for an operational decision rule under the stated 5:1 cost asymmetry, the strongest and simplest solution in this report is to use LDA probability outputs with a cost-sensitive threshold (() 0.20) (or equivalently balanced priors), because it delivers the lowest expected cost while substantially increasing Default recall.</p>
 </section>
 
 </main>
