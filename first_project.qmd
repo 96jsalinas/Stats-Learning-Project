@@ -180,7 +180,7 @@ plt.show()
 **Interpretations:**
 
 * Adjacent months (e.g. `bill_sep` and `bill_aug`) show very high correlations (around 0.90–0.95), which is expected: a client's outstanding balance carries over month to month.
-* Correlations weaken with temporal distance : `bill_sep` and `bill_apr` are still moderately correlated (around 0.70), but less so than neighbouring months.
+* Correlations weaken with temporal distance : `bill_sep` and `bill_apr` are still moderately correlated (0.80), but less so than neighbouring months.
 * This near-multicollinearity is a known challenge for Naïve Bayes (which assumes feature independence) and for LDA (which inverts the covariance matrix). Dimensionality reduction or careful feature selection will be considered during modelling.
 
 ---
@@ -215,11 +215,57 @@ plt.show()
 
 ---
 
+## 3.5 Repayment Status by Default
+
+The six `status_*` columns encode each client's repayment behaviour for a given month: −2 = no consumption, −1 = paid in full, 0 = revolving credit used, 1–8 = months of payment delay. Because late payment is a direct precursor to default, these are likely to be among the most discriminative features in the dataset. We compare their distributions across the two target classes using the most recent month (`status_sep`) and then show the full six-month picture.
+
+```{python}
+status_cols_ordered = ['status_apr', 'status_may', 'status_jun',
+                       'status_jul', 'status_aug', 'status_sep']
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Distribution of status_sep by default class
+for label, grp in df.groupby('default'):
+    axes[0].hist(grp['status_sep'], bins=range(-2, 10),
+                 alpha=0.6, density=True,
+                 label=f"{'Default' if label == 1 else 'No Default'}")
+axes[0].set_title('September Repayment Status by Default Class')
+axes[0].set_xlabel('status_sep (−2 = no use, −1 = paid full, 1–8 = months late)')
+axes[0].set_ylabel('Density')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+# Mean repayment status per month, split by default class
+mean_status = (df.groupby('default')[status_cols_ordered]
+                 .mean()
+                 .T
+                 .rename(columns={0: 'No Default', 1: 'Default'}))
+mean_status.index = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep']
+
+axes[1].plot(mean_status.index, mean_status['No Default'], marker='o', label='No Default')
+axes[1].plot(mean_status.index, mean_status['Default'],    marker='s', label='Default')
+axes[1].set_title('Mean Repayment Status Over Time by Default Class')
+axes[1].set_ylabel('Mean status code')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+**Interpretations:**
+
+* **`status_sep` is strongly discriminative**: non-defaulters cluster predominantly at **0** (revolving credit used), while defaulters are shifted markedly toward positive values.
+* **Temporal trend confirms escalation**: the mean repayment status for defaulters rises steadily from April (~0.1) to September (~0.65), while non-defaulters remain negative throughout, reflecting a mix of no-consumption and revolving-credit behaviour.
+
+---
+
 # 4. Preprocessing Pipeline
 
 ## 4.1 Variable Grouping
 
-We explicitly categorise every feature before applying transformations, ensuring the right treatment for each variable type.
+We explicitly categorise every feature before applying transformations, ensuring the right treatment for each variable type. We include age on `monetary_cols` as these are the ones that are going to be log transformed.
 
 ```{python}
 monetary_cols = [
@@ -339,7 +385,7 @@ if logged_cols:
     display(comparison.round(3))
 ```
 
-**Interpretation:** For all transformed columns, absolute skewness dropped substantially (typically from > 2 to < 1), bringing the distributions much closer to symmetry. This will improve the Gaussian assumptions underlying LDA and Naïve Bayes and reduce the influence of outliers on distance-based models.
+**Interpretation:** For all transformed columns, absolute skewness dropped substantially, bringing the distributions much closer to symmetry. This will improve the Gaussian assumptions underlying LDA and Naïve Bayes and reduce the influence of outliers on distance-based models.
 
 ---
 
@@ -819,7 +865,7 @@ display(prior_df)
 
 ---
 
-## 7.5 Solution 3: Resampling
+## 7.4 Solution 3: Resampling
 
 Data-level strategies modify the training set rather than the model. We compare three approaches and evaluate each at the default 0.5 threshold and at the cost-optimal threshold.
 
@@ -929,12 +975,12 @@ plt.show()
 **Interpretation:**
 
 * **Undersampling** reduces the training set from 21 000 to **9 290 rows** (50/50 balance by discarding majority-class observations). At threshold 0.5 it more than doubles default recall (27 % → **61 %**) and cuts expected cost from 0.840 to **0.613**. However, at the cost-optimal threshold 0.20 it pushes recall to 98 % with a precision collapse to 0.19, raising expected cost back to 0.732.
-* **Oversampling** repeats minority-class rows to reach **32 710 training rows** (50/50). Results at threshold 0.5 are nearly identical to undersampling (recall 61 %, expected cost 0.610), confirming both strategies impose a similar effective prior shift. Oversampling preserves all original majority-class information, giving it a marginally higher AUC (0.741 vs 0.742) but no practical difference at this scale.
+* **Oversampling** repeats minority-class rows to reach **32 710 training rows** (50/50). Results at threshold 0.5 are nearly identical to undersampling (recall 61 %, expected cost 0.610), confirming both strategies impose a similar effective prior shift. Oversampling preserves all original majority-class information, but actually yields a marginally lower AUC than undersampling (0.741 vs 0.742), likely because discarding majority-class observations in undersampling slightly sharpens the decision boundary. In practice the difference is negligible.
 * **SMOTE** (Synthetic Minority Over-sampling Technique) generates new synthetic minority-class observations by interpolating between existing ones in feature space, rather than simply duplicating rows. It produces the same 32 710-row balanced training set as oversampling. At threshold 0.5 the results are nearly identical to plain oversampling (recall **61 %**, F1 **0.499**, expected cost **0.616**), with SMOTE marginally worse, likely because LDA's linear boundary cannot exploit the smoother minority-class region that SMOTE creates. The benefit of SMOTE is more pronounced for non-linear models. At the cost-optimal threshold (0.20) it similarly overshoots to around 98 % recall with a precision collapse (expected cost 0.727).
 
 ---
 
-## 7.6 Overall Comparison
+## 7.5 Overall Comparison
 
 ```{python}
 all_rows = []
@@ -972,7 +1018,7 @@ display(final_df)
 
 * **Threshold tuning is the highest-leverage, zero-retraining intervention**: shifting LDA's threshold from 0.50 to **0.200** (grid-optimal; theoretical $p^* = 0.167$) raises default recall from 27 % to **63 %**, F1 from 0.38 to **0.50**, and delivers the **lowest expected cost of 0.599** across all configurations tested.
 * **Youden's J statistic** offers a symmetrical, ROC-curve-based alternative: it selects threshold **0.2244** (J = 0.398), maximising $\text{TPR} - \text{FPR}$ with sensitivity 0.60 and specificity 0.80. This yields recall 60 %, F1 **0.519**, and expected cost **0.600**, nearly indistinguishable from the cost-matrix threshold (0.200, cost 0.599) in this dataset. The two criteria converge here because the 5:1 cost ratio implies a relatively mild shift from 0.5; in scenarios with more extreme asymmetry (e.g. 20:1) the gap would widen substantially, and the cost-matrix threshold would be clearly preferable.
-* **Balanced priors** are the best single model-level fix: one parameter change raises recall to **60 %** and F1 to **0.517** (the highest of any configuration) with expected cost of 0.601, essentially tied with threshold tuning and more principled theoretically.
+* **Balanced priors** are the best single model-level fix: one parameter change raises recall to **60 %** and F1 to **0.517** (the highest F1 of any model-level intervention, and second-highest overall behind Youden's J threshold at 0.519) with expected cost of 0.601, essentially tied with threshold tuning and more principled theoretically.
 * **SMOTE** produces the same 32 710-row balanced training set as random oversampling but fills the minority-class region with synthetic interpolated points rather than duplicates. At threshold 0.5 it achieves recall **61 %**, F1 **0.499**, expected cost **0.616**, marginally worse than plain oversampling (F1 0.507, cost 0.610) because LDA's linear boundary cannot exploit the smoother feature-space coverage. SMOTE's advantage becomes more pronounced with non-linear models.
 * **Resampling at threshold 0.5** brings comparable gains to balanced priors (recall around 61 %, expected cost around 0.61), but combining resampling with the cost-optimal threshold backfires: the model overshoots to around 98 % recall with precision of 0.19, worsening expected cost to 0.73.
 * **GNB with cost threshold (0.20)** achieves a recall of **59 %** and expected cost of **0.637**, consistently behind the best LDA variants. GNB's miscalibrated probabilities make threshold selection less precise.
@@ -1189,11 +1235,11 @@ plt.show()
 
 * The cross-validated choice k=59 generalises well: the mean CV ROC-AUC was 0.7626 and the test ROC-AUC is 0.7575, a small drop of about 0.005, suggesting limited overfitting.
 * Relative to the baseline k=5 (ROC-AUC 0.7158), the tuned model improves ranking performance by about 0.042 in ROC-AUC and slightly increases accuracy (0.81 vs 0.80). This confirms that tuning k materially improves discrimination.
-* From the confusion matrix (TN = 6705, FP = 304, FN = 1442, TP = 549), the model is even more conservative at the default 0.50 threshold: it predicts “Default” only 851 / 9000 = 9.45% of the time, well below the true default rate (22.1%).
-* For the Default class, precision is 0.64, but recall drops to 0.28 (approximately 72 % of defaulters are missed). In other words, increasing k smooths the decision rule and reduces false positives, but increases false negatives.
+* From the confusion matrix (TN = 6705, FP = 304, FN = 1442, TP = 549), the model is even more conservative at the default 0.50 threshold: it predicts “Default” only 853 / 9000 = 9.48% of the time, well below the true default rate (22.1%).
+* For the Default class, precision is 0.64, but recall drops to 0.28 (approximately 72 % of defaulters are missed). In other words, increasing k smooths the decision rule and reduces false positives, but increases false negatives. **This conservatism is partly structural**: with 22 % defaulters in the training set, a neighbourhood of k=59 will on average contain roughly 13 defaulters and 46 non-defaulters. Majority-vote at threshold 0.5 therefore requires defaulters to constitute more than half the neighbours. Applying the cost-sensitive threshold (≈ 0.20) from Section 7 to the k-NN probability outputs would resolve this in the same way as it did for LDA, raising Default recall substantially without retraining.
 * Performance on the majority class remains strong (No Default recall 0.96), which helps overall accuracy but again highlights that accuracy alone is not sufficient under class imbalance. 
 * The combined ROC plot shows that the tuned model dominates the baseline across most thresholds: AUC increases from 0.716 (k=5) to 0.757 (k=59), confirming that tuning k improves the model’s ability to rank defaulters ahead of non-defaulters.
-* The Precision–Recall plot provides a clearer view under class imbalance. Average precision increases substantially from 0.422 (k=5) to approximately 0.51 (k=59), meaning the tuned model achieves better precision at a given recall level over a wide range of thresholds. This improvement in ranking contrasts with the low Default recall at the fixed 0.50 threshold, highlighting that the main limitation is the chosen decision threshold rather than the model’s probability ordering.
+* The Precision–Recall plot provides a clearer view under class imbalance. Average precision increases substantially from 0.422 (k=5) to 0.515 (k=59), meaning the tuned model achieves better precision at a given recall level over a wide range of thresholds. This improvement in ranking contrasts with the low Default recall at the fixed 0.50 threshold, highlighting that the main limitation is the chosen decision threshold rather than the model’s probability ordering.
 
 
 # 9. Conclusion
