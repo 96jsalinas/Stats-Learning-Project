@@ -87,6 +87,7 @@ def academic_summary(df_in):
     return summary
 
 academic_summary(df)
+print(f"Age range: {df['age'].min()} – {df['age'].max()}")
 ```
 
 **Key findings:**
@@ -943,6 +944,7 @@ for name, model in [('Original (no resampling)', lda_orig),
         'F1@0.5':                    f1_score(y_te_np, yp_50),
         'Expected Cost@0.5':         expected_cost(y_te_np, yp_50, C),
         f'Recall@{opt_t:.2f}':       recall_score(y_te_np, yp_opt),
+        f'Precision@{opt_t:.2f}':    precision_score(y_te_np, yp_opt, zero_division=0),
         f'F1@{opt_t:.2f}':           f1_score(y_te_np, yp_opt),
         f'Expected Cost@{opt_t:.2f}':expected_cost(y_te_np, yp_opt, C),
         'ROC-AUC':                   roc_auc_score(y_te_np, prob),
@@ -950,6 +952,11 @@ for name, model in [('Original (no resampling)', lda_orig),
 
 resample_df = pd.DataFrame(resample_rows).set_index('Strategy').round(4)
 display(resample_df)
+
+prec_col = f'Precision@{opt_t:.2f}'
+prec_down = resample_df.loc['Random undersampling', prec_col]
+prec_up   = resample_df.loc['Random oversampling',  prec_col]
+prec_smote= resample_df.loc['SMOTE',                prec_col]
 ```
 
 ### Confusion matrices at threshold 0.5
@@ -974,7 +981,7 @@ plt.show()
 
 **Interpretation:**
 
-* **Undersampling** reduces the training set from 21 000 to **9 290 rows** (50/50 balance by discarding majority-class observations). At threshold 0.5 it more than doubles default recall (27 % → **61 %**) and cuts expected cost from 0.840 to **0.613**. However, at the cost-optimal threshold 0.20 it pushes recall to 98 % with a precision collapse to 0.19, raising expected cost back to 0.732.
+* **Undersampling** reduces the training set from 21 000 to **9 290 rows** (50/50 balance by discarding majority-class observations). At threshold 0.5 it more than doubles default recall (27 % → **61 %**) and cuts expected cost from 0.840 to **0.613**. However, at the cost-optimal threshold 0.20 it pushes recall to 98 % with a precision collapse to **`{python} f"{prec_down:.2f}"`**, raising expected cost back to 0.732.
 * **Oversampling** repeats minority-class rows to reach **32 710 training rows** (50/50). Results at threshold 0.5 are nearly identical to undersampling (recall 61 %, expected cost 0.610), confirming both strategies impose a similar effective prior shift. Oversampling preserves all original majority-class information, but actually yields a marginally lower AUC than undersampling (0.741 vs 0.742), likely because discarding majority-class observations in undersampling slightly sharpens the decision boundary. In practice the difference is negligible.
 * **SMOTE** (Synthetic Minority Over-sampling Technique) generates new synthetic minority-class observations by interpolating between existing ones in feature space, rather than simply duplicating rows. It produces the same 32 710-row balanced training set as oversampling. At threshold 0.5 the results are nearly identical to plain oversampling (recall **61 %**, F1 **0.499**, expected cost **0.616**), with SMOTE marginally worse, likely because LDA's linear boundary cannot exploit the smoother minority-class region that SMOTE creates. The benefit of SMOTE is more pronounced for non-linear models. At the cost-optimal threshold (0.20) it similarly overshoots to around 98 % recall with a precision collapse (expected cost 0.727).
 
@@ -1020,7 +1027,7 @@ display(final_df)
 * **Youden's J statistic** offers a symmetrical, ROC-curve-based alternative: it selects threshold **0.2244** (J = 0.398), maximising $\text{TPR} - \text{FPR}$ with sensitivity 0.60 and specificity 0.80. This yields recall 60 %, F1 **0.519**, and expected cost **0.600**, nearly indistinguishable from the cost-matrix threshold (0.200, cost 0.599) in this dataset. The two criteria converge here because the 5:1 cost ratio implies a relatively mild shift from 0.5; in scenarios with more extreme asymmetry (e.g. 20:1) the gap would widen substantially, and the cost-matrix threshold would be clearly preferable.
 * **Balanced priors** are the best single model-level fix: one parameter change raises recall to **60 %** and F1 to **0.517** (the highest F1 of any model-level intervention, and second-highest overall behind Youden's J threshold at 0.519) with expected cost of 0.601, essentially tied with threshold tuning and more principled theoretically.
 * **SMOTE** produces the same 32 710-row balanced training set as random oversampling but fills the minority-class region with synthetic interpolated points rather than duplicates. At threshold 0.5 it achieves recall **61 %**, F1 **0.499**, expected cost **0.616**, marginally worse than plain oversampling (F1 0.507, cost 0.610) because LDA's linear boundary cannot exploit the smoother feature-space coverage. SMOTE's advantage becomes more pronounced with non-linear models.
-* **Resampling at threshold 0.5** brings comparable gains to balanced priors (recall around 61 %, expected cost around 0.61), but combining resampling with the cost-optimal threshold backfires: the model overshoots to around 98 % recall with precision of 0.19, worsening expected cost to 0.73.
+* **Resampling at threshold 0.5** brings comparable gains to balanced priors (recall around 61 %, expected cost around 0.61), but combining resampling with the cost-optimal threshold backfires: the model overshoots to around 98 % recall with precision collapsing to around **`{python} f"{prec_down:.2f}"`**, worsening expected cost to 0.73.
 * **GNB with cost threshold (0.20)** achieves a recall of **59 %** and expected cost of **0.637**, consistently behind the best LDA variants. GNB's miscalibrated probabilities make threshold selection less precise.
 * **ROC-AUC is invariant across all interventions** (all LDA variants: 0.740–0.741): every strategy improves decision rules without changing the underlying ranking ability of the model.
 * The expected-cost framework is portable: with a 5:1 FN/FP ratio the optimal threshold is 0.167; a bank with a different loss estimate simply updates $c_{FN}$ and recomputes $p^* = c_{FP}/(c_{FP}+c_{FN})$.
