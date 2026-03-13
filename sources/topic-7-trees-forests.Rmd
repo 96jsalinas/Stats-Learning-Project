@@ -1,0 +1,835 @@
+---
+title: "Topic 7:  Tree Based Models"
+author: "MS in Statistics for Data Science"
+date: "UC3M, 2025-2026"
+output:
+  html_document:
+    theme: cosmo
+    highlight: tango
+    number_sections: true
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 9,
+  fig.height = 5.5
+)
+```
+
+# Introduction
+
+In this notebook mirrors we will practice with the tree based models seen in topic 7:
+
+1. Single decision trees (with pruning)
+2. Bagging
+3. Random forests
+4. Boosting (GBM, XGBoost)
+
+We will first show some basic results with `iris` (classification) and `mtcars` (regression), and then we will study bigger datasets: `Heart` and `Boston`
+
+The next chunks load packages, set reproducibility controls, and define only the essential metric helpers used throughout.
+
+```{r libraries}
+library(ISLR2)
+library(tree)
+library(rpart)
+library(randomForest)
+library(gbm)
+library(xgboost)
+library(caret)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(purrr)
+library(tibble)
+library(forcats)
+```
+
+```{r reproducibility}
+# Set a seed to be used whenever we have a random process
+my_seed <- 42
+
+# Set number of trees values for ensembles and Cross Validation folds
+ntree_fast <- 250
+ntree_main <- 350
+cv_folds <- 3
+```
+
+```{r metrics-functions}
+# Custom metric functions
+class_metrics <- function(truth, pred, positive = "Yes") {
+  truth <- factor(truth, levels = c("No", "Yes"))
+  pred <- factor(pred, levels = c("No", "Yes"))
+
+  tp <- sum(truth == positive & pred == positive)
+  tn <- sum(truth != positive & pred != positive)
+  fp <- sum(truth != positive & pred == positive)
+  fn <- sum(truth == positive & pred != positive)
+
+  acc <- (tp + tn) / length(truth)
+  sens <- ifelse(tp + fn > 0, tp / (tp + fn), NA_real_)
+  spec <- ifelse(tn + fp > 0, tn / (tn + fp), NA_real_)
+
+  tibble(
+    Accuracy = acc,
+    Sensitivity = sens,
+    Specificity = spec
+  )
+}
+
+reg_metrics <- function(truth, pred) {
+  rmse <- sqrt(mean((truth - pred)^2))
+  mae <- mean(abs(truth - pred))
+  rsq <- 1 - sum((truth - pred)^2) / sum((truth - mean(truth))^2)
+
+  tibble(
+    RMSE = rmse,
+    MAE = mae,
+    R2 = rsq
+  )
+}
+```
+
+# Classification Tree (`iris`)
+
+We use the classic Iris dataset (3 flower species, 4 numeric predictors) to learn the basic tree workflow. We start by creating a stratified train/test split with `caret`, and in this first example we focus on `Petal.Length` and `Petal.Width` so we can visualise the tree partition directly in 2D.
+
+```{r iris-split}
+data(iris)
+
+set.seed(123)
+iris_idx <- createDataPartition(iris$Species, p = 0.7, list = FALSE)
+iris_train <- iris[iris_idx, ]
+iris_test  <- iris[-iris_idx, ]
+
+cat("Train:", nrow(iris_train), "| Test:", nrow(iris_test), "\n")
+```
+
+The main function is `tree()` from the `tree` package. Some of its arguments are:
+
+- `formula`
+- `data` 
+- `control = tree.control(...)` which governs how large the tree grows with the following parameters:
+    - `nobs` (number of observations, required)
+    - `mindev` (minimum deviance improvement required to attempt a split; smaller values grow bigger trees, default `0.01`)
+    - `minsize` (minimum observations per terminal node, default `10`).
+
+```{r iris-tree-fit}
+iris_tree <- tree(
+  Species ~ Petal.Length + Petal.Width,
+  data    = iris_train,
+  control = tree.control(
+    nobs    = nrow(iris_train),
+    mindev  = 0.01,   # lower = bigger tree
+    minsize = 5       # min obs per leaf
+  )
+)
+
+summary(iris_tree)
+```
+
+The summary shows the number of terminal nodes, the variables actually used in splits, and the **training** misclassification rate. We can visualise the full tree with `plot()` and `text()`. `pretty = 0` keeps the original factor labels rather than abbreviating them.
+
+```{r iris-tree-plot, fig.height=6}
+plot(iris_tree)
+text(iris_tree, pretty = 0, cex = 0.8)
+title("Iris classification tree")
+```
+
+Each internal node shows the splitting variable and threshold; each leaf shows the predicted class.
+
+Because we used two predictors, we can plot the feature-space partition induced by the tree.
+
+```{r iris-tree-partition, fig.height=5}
+iris_grid <- expand.grid(
+  Petal.Length = seq(min(iris_train$Petal.Length) - 0.3,
+                     max(iris_train$Petal.Length) + 0.3,
+                     length.out = 200),
+  Petal.Width  = seq(min(iris_train$Petal.Width) - 0.3,
+                     max(iris_train$Petal.Width) + 0.3,
+                     length.out = 200)
+)
+
+iris_grid$Pred <- predict(iris_tree, newdata = iris_grid, type = "class")
+
+ggplot() +
+  geom_tile(
+    data = iris_grid,
+    aes(x = Petal.Length, y = Petal.Width, fill = Pred),
+    alpha = 0.28
+  ) +
+  geom_point(
+    data = iris_train,
+    aes(x = Petal.Length, y = Petal.Width, color = Species),
+    size = 1.6,
+    alpha = 0.85
+  ) +
+  labs(
+    title = "Iris tree partition in petal feature space",
+    subtitle = "Background: class predicted by the tree",
+    x = "Petal.Length",
+    y = "Petal.Width"
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  scale_color_brewer(palette = "Set1") +
+  theme_minimal()
+```
+
+
+To evaluate on the test set we use `predict()` with `type = "class"`, which returns the predicted class directly instead of the default probability matrix.
+
+```{r iris-tree-eval}
+iris_tree_pred <- predict(iris_tree, newdata = iris_test, type = "class")
+confusionMatrix(iris_tree_pred, iris_test$Species)
+```
+
+A large tree may overfit. Pruning addresses this by first growing a full tree and then using cross-validation to select the number of leaves that minimises CV error. The workflow is: 
+
+1. Grow a large tree with `mindev = 0`
+2. Run `cv.tree()` with `FUN = prune.misclass` to use misclassification error instead of deviance
+3. Pick the size with the lowest CV error
+4. Call `prune.misclass(big_tree, best = chosen_size)`. 
+
+The `cv.tree` object contains `$size` (number of terminal nodes), `$dev` (CV error), and `$k` (the regularisation penalty alpha).
+
+```{r iris-big}
+iris_big <- tree(
+  Species ~ .,
+  data    = iris_train,
+  control = tree.control(nobs = nrow(iris_train), mindev = 0, minsize = 2)
+)
+
+plot(iris_big)
+text(iris_big, pretty = 0, cex = 0.85)
+title(paste("Original Big Tree"))
+```
+
+
+```{r iris-pruning}
+
+set.seed(3302)
+iris_cv <- cv.tree(iris_big, FUN = prune.misclass)
+
+# Show the results
+iris_cv
+
+# Create a plot
+tibble(size = iris_cv$size, cv_error = iris_cv$dev) %>%
+  ggplot(aes(x = size, y = cv_error)) +
+  geom_line(color = "steelblue", linewidth = 1) +
+  geom_point(color = "steelblue", size = 2) +
+  labs(
+    title = "Pruning curve: CV misclassification vs tree size",
+    x = "Number of terminal nodes",
+    y = "CV misclassification count"
+  ) +
+  theme_minimal()
+```
+
+```{r iris-choosing-min}
+# Selecting the tree size with minimum CV error
+best_size <- iris_cv$size[which.min(iris_cv$dev)]
+cat("Best tree size (terminal nodes):", best_size, "\n")
+
+# But this is the same size as the big one!
+# In this case there are several values with minimum CV error
+# We should then choose the smallest size one given that they have the same CV error
+# The following code does precisely that
+min_dev <- min(iris_cv$dev, na.rm = TRUE)
+best_size <- min(iris_cv$size[iris_cv$dev == min_dev], na.rm = TRUE)
+cat("Best tree size (terminal nodes):", best_size, "\n")
+```
+
+
+```{r iris-pruned-eval}
+iris_pruned <- prune.misclass(iris_big, best = best_size)
+
+plot(iris_pruned)
+text(iris_pruned, pretty = 0, cex = 0.85)
+title(paste("Pruned tree ", best_size, "leaves"))
+
+iris_pruned_pred <- predict(iris_pruned, newdata = iris_test, type = "class")
+confusionMatrix(iris_pruned_pred, iris_test$Species)
+```
+
+You can see how the accuracy is the same as the unprunned tree, but its smaller in size and therefore more interpretable.
+
+---
+
+# Bagging and Random Forest (`iris`)
+
+To use bagging, we saw that its indeed an special case of a random forest where `m = p`. Therefore both methods come from the `randomForest` package and share the same interface, where the key argument is `mtry`, the number of candidate predictors randomly sampled at each split. Setting `mtry = p` (all predictors) gives **bagging**, while `mtry = floor(sqrt(p))` (the default for classification) gives a **random forest**. The argument `ntree` controls the total number of trees (default 500; more trees are rarely harmful as it will not overfit due to the averaging, just slower), and `importance = TRUE` enables variable importance computation.
+
+Starting with bagging we will fit 500 trees, each seeing all 4 predictors at every split (`m=p`).
+
+```{r iris-bagging}
+p <- ncol(iris_train) - 1   # number of predictors
+
+set.seed(3303)
+iris_bag <- randomForest(
+  Species   ~ .,
+  data       = iris_train,
+  mtry       = p,           # bagging: use ALL predictors at each split
+  ntree      = 500,
+  importance = TRUE
+)
+
+iris_bag   # prints OOB confusion matrix and error
+```
+
+Remember that the **OOB (out-of-bag) error** printed by the model is a built-in estimate of test error at no extra cost: each tree only uses ~63 % of training cases, so the remaining ~37 % act as a held-out set for that tree. Therefore we dont have the need to explicitly use cross-validation
+
+```{r iris-bagging-eval}
+iris_bag_pred <- predict(iris_bag, newdata = iris_test, type = "class")
+confusionMatrix(iris_bag_pred, iris_test$Species)
+```
+
+Now we fit the random forest, reducing `mtry` to `floor(sqrt(p))` so that only a random subset of features is considered at each split. This decorrelates the trees and typically improves the ensemble.
+
+```{r iris-rf}
+set.seed(3304)
+iris_rf <- randomForest(
+  Species   ~ .,
+  data      = iris_train,
+  mtry      = floor(sqrt(p)),  # default: sqrt(p) for classification
+  ntree     = 500,
+  importance = TRUE
+)
+
+iris_rf
+```
+
+```{r iris-rf-eval}
+iris_rf_pred <- predict(iris_rf, newdata = iris_test, type = "class")
+confusionMatrix(iris_rf_pred, iris_test$Species)
+```
+
+In this case, as `iris` is a very simple dataset we get the same accuracy with all the models, but we will later see how this changes in more complex datasets.
+
+With `importance = TRUE` we can inspect which variables mattered most. `importance()` returns two types of scores: **MeanDecreaseAccuracy** (`type = 1`) measures how much accuracy drops when each variable is permuted at random (higher = more important), and **MeanDecreaseGini** (`type = 2`) sums the total node impurity decrease from splits on that variable across all trees. `varImpPlot()` visualises both at once.
+
+```{r iris-importance}
+varImpPlot(iris_rf, main = "Iris Random Forest — Variable Importance", cex = 0.9)
+```
+
+---
+
+# Regression Tree (mtcars)
+
+We have been using tree-based models with classification examples but trees also work for **continuous targets**. The syntax is identical: `predict()` then returns a numeric vector and the tree minimises residual sum of squares (RSS) at each split instead of impurity. We use `mtcars` to predict fuel efficiency (`mpg`) from the other car features.
+
+```{r mtcars-split}
+data(mtcars)
+set.seed(456)
+mt_idx   <- createDataPartition(mtcars$mpg, p = 0.75, list = FALSE)
+mt_train <- mtcars[mt_idx, ]
+mt_test  <- mtcars[-mt_idx, ]
+```
+
+```{r mtcars-tree-fit}
+mt_tree <- tree(mpg ~ ., data = mt_train)
+
+plot(mt_tree)
+text(mt_tree, cex = 0.75)
+title("mtcars regression tree")
+```
+
+To see clearly how regression trees create piecewise-constant predictions, we fit a one-predictor tree (`mpg ~ wt`) and draw its fitted values as a step function.
+
+```{r mtcars-tree-step, fig.height=5}
+mt_tree_wt <- tree(mpg ~ wt, data = mt_train)
+
+wt_grid <- tibble(
+  wt = seq(min(mt_train$wt), max(mt_train$wt), length.out = 300)
+) %>%
+  mutate(mpg_hat = predict(mt_tree_wt, newdata = .))
+
+ggplot(mt_train, aes(x = wt, y = mpg)) +
+  geom_point(color = "grey35", alpha = 0.75) +
+  geom_step(
+    data = wt_grid,
+    aes(x = wt, y = mpg_hat),
+    color = "firebrick",
+    linewidth = 1
+  ) +
+  labs(
+    title = "Regression tree as a step function (mpg ~ wt)",
+    subtitle = "Each flat segment is one terminal-node mean",
+    x = "wt (1000 lbs)",
+    y = "mpg"
+  ) +
+  theme_minimal()
+```
+
+```{r mtcars-tree-eval}
+mt_pred <- predict(mt_tree, newdata = mt_test)
+
+rmse <- sqrt(mean((mt_pred - mt_test$mpg)^2))
+cat("Test RMSE:", round(rmse, 3), "\n")
+
+tibble(actual = mt_test$mpg, predicted = mt_pred) %>%
+  ggplot(aes(x = actual, y = predicted)) +
+  geom_point(size = 2, color = "steelblue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  labs(title = "Regression tree: predicted vs actual mpg") +
+  theme_minimal()
+```
+
+# Classification Case Study (Heart)
+
+We download the dataset, clean it, and create a stratified train/test split.
+
+```{r cls-data}
+
+url <- "https://www.statlearning.com/s/Heart.csv"
+heart_raw <- read.csv(url)
+
+heart_data <- na.omit(heart_raw)
+
+# drop the ID column
+heart_data$X <- NULL
+
+# Convert to factors character variables
+char_cols <- sapply(heart_data, is.character)
+heart_data[char_cols] <- lapply(heart_data[char_cols], factor)
+
+summary(heart_data)
+```
+
+
+
+```{r cls-data-split}
+set.seed(my_seed)
+heart_train_idx <- createDataPartition(heart_data$AHD, p = 0.7, list = FALSE)
+train_heart <- heart_data[heart_train_idx, ]
+test_heart <- heart_data[-heart_train_idx, ]
+
+cat("Heart train rows:", nrow(train_heart), "\n")
+cat("Heart test rows:", nrow(test_heart), "\n")
+```
+
+
+We start with a single tree, then prune it via cross-validation, and evaluate on the test set.
+
+```{r cls-tree}
+cls_tree <- tree(AHD ~ ., data = train_heart)
+print(summary(cls_tree))
+```
+
+```{r cls-pruning}
+cls_tree_full <- tree(
+  AHD ~ ., data = train_heart,
+  control = tree.control(nobs = nrow(train_heart), minsize = 2, mindev = 0)
+)
+
+set.seed(my_seed)
+cv_cls <- cv.tree(cls_tree_full, FUN = prune.misclass)
+
+best_size_cls <- cv_cls$size[which.min(cv_cls$dev)]
+cls_tree_pruned <- prune.misclass(cls_tree_full, best = best_size_cls)
+
+cv_cls_df <- tibble(size = cv_cls$size, cv_error = cv_cls$dev)
+
+pruning_plot <- ggplot(cv_cls_df, aes(x = size, y = cv_error)) +
+  geom_line(color = "steelblue", linewidth = 1) +
+  geom_point(color = "steelblue", size = 2) +
+  geom_vline(xintercept = best_size_cls, linetype = "dashed", color = "red") +
+  labs(
+    title = "Heart: CV Error vs Tree Size",
+    subtitle = paste("Best size =", best_size_cls),
+    x = "Terminal nodes",
+    y = "CV misclassification error"
+  ) +
+  theme_minimal()
+
+pruning_plot
+```
+
+```{r cls-tree-eval}
+cls_tree_prob <- predict(cls_tree_pruned, newdata = test_heart, type = "vector")
+cls_tree_prob_yes <- if ("Yes" %in% colnames(cls_tree_prob)) as.numeric(cls_tree_prob[, "Yes"]) else as.numeric(cls_tree_prob[, 2])
+cls_tree_pred <- factor(ifelse(cls_tree_prob_yes >= 0.5, "Yes", "No"), levels = c("No", "Yes"))
+
+metrics_cls_tree <- class_metrics(test_heart$AHD, cls_tree_pred)
+metrics_cls_tree
+```
+
+Bagging corresponds to a random forest with `mtry = p` (all predictors considered at each split).
+
+```{r cls-bagging}
+p_cls <- ncol(train_heart) - 1
+
+set.seed(my_seed)
+bag_cls <- randomForest(
+  AHD ~ ., data = train_heart,
+  mtry = p_cls,
+  ntree = ntree_main,
+  importance = TRUE
+)
+
+bag_cls_prob <- predict(bag_cls, newdata = test_heart, type = "prob")
+bag_cls_prob_yes <- if ("Yes" %in% colnames(bag_cls_prob)) as.numeric(bag_cls_prob[, "Yes"]) else as.numeric(bag_cls_prob[, 2])
+bag_cls_pred <- predict(bag_cls, newdata = test_heart, type = "response")
+
+metrics_cls_bag <- class_metrics(test_heart$AHD, bag_cls_pred)
+metrics_cls_bag
+```
+
+Next we tune `mtry` with OOB error and fit a random forest.
+
+```{r cls-rf-tune}
+base_mtry_cls <- max(1, floor(sqrt(p_cls)))
+mtry_grid_cls <- sort(unique(pmax(1, pmin(p_cls, c(base_mtry_cls - 1, base_mtry_cls, base_mtry_cls + 1, p_cls)))))
+
+rf_cls_tuning <- map_dfr(mtry_grid_cls, function(m) {
+  set.seed(my_seed + m)
+  fit <- randomForest(AHD ~ ., data = train_heart, mtry = m, ntree = ntree_fast)
+
+  tibble(
+    mtry = m,
+    OOB_Error = fit$err.rate[ntree_fast, "OOB"]
+  )
+})
+
+best_mtry_cls <- rf_cls_tuning$mtry[which.min(rf_cls_tuning$OOB_Error)]
+
+set.seed(my_seed)
+rf_cls <- randomForest(
+  AHD ~ ., data = train_heart,
+  mtry = best_mtry_cls,
+  ntree = ntree_main,
+  importance = TRUE
+)
+
+rf_cls_prob <- predict(rf_cls, newdata = test_heart, type = "prob")
+rf_cls_prob_yes <- if ("Yes" %in% colnames(rf_cls_prob)) as.numeric(rf_cls_prob[, "Yes"]) else as.numeric(rf_cls_prob[, 2])
+rf_cls_pred <- predict(rf_cls, newdata = test_heart, type = "response")
+
+metrics_cls_rf <- class_metrics(test_heart$AHD, rf_cls_pred)
+metrics_cls_rf
+```
+
+```{r cls-rf-oob-plot}
+oob_ntree_df <- tibble(
+  Trees = seq_len(nrow(rf_cls$err.rate)),
+  OOB_Error = rf_cls$err.rate[, "OOB"]
+)
+
+p_oob_ntree <- ggplot(oob_ntree_df, aes(x = Trees, y = OOB_Error)) +
+  geom_line(color = "#2c7fb8", linewidth = 1) +
+  labs(title = "Heart RF: OOB Error vs Number of Trees", x = "Number of trees", y = "OOB error") +
+  theme_minimal()
+
+p_oob_mtry <- ggplot(rf_cls_tuning, aes(x = mtry, y = OOB_Error)) +
+  geom_line(color = "#41ab5d", linewidth = 1) +
+  geom_point(color = "#41ab5d", size = 2.4) +
+  geom_vline(xintercept = best_mtry_cls, linetype = "dashed", color = "red") +
+  labs(title = "Heart RF: OOB Error vs mtry", x = "mtry", y = "OOB error") +
+  theme_minimal()
+
+p_oob_ntree
+p_oob_mtry
+```
+
+We inspect variable importance from the fitted random forest.
+
+```{r cls-rf-importance}
+imp_cls <- as.data.frame(importance(rf_cls))
+imp_cls$Variable <- rownames(imp_cls)
+
+importance_cols <- intersect(c("MeanDecreaseAccuracy", "MeanDecreaseGini"), names(imp_cls))
+imp_cls_long <- imp_cls %>%
+  select(Variable, all_of(importance_cols)) %>%
+  pivot_longer(cols = -Variable, names_to = "Measure", values_to = "Importance")
+
+ggplot(imp_cls_long, aes(x = fct_reorder(Variable, Importance), y = Importance, fill = Measure)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(title = "Heart RF Variable Importance", x = "", y = "Importance") +
+  theme_minimal()
+```
+
+We fit a compact GBM grid using `caret`.
+
+```{r cls-gbm}
+cls_ctrl <- trainControl(
+  method = "cv",
+  number = cv_folds,
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary
+)
+
+cls_grid <- expand.grid(
+  interaction.depth = c(1, 2),
+  n.trees = c(100, 250),
+  shrinkage = c(0.05, 0.1),
+  n.minobsinnode = c(10)
+)
+
+set.seed(my_seed)
+gbm_cls <- train(
+  AHD ~ ., data = train_heart,
+  method = "gbm",
+  trControl = cls_ctrl,
+  tuneGrid = cls_grid,
+  metric = "ROC",
+  verbose = FALSE
+)
+
+gbm_cls_prob <- predict(gbm_cls, newdata = test_heart, type = "prob")
+gbm_cls_prob_yes <- if ("Yes" %in% colnames(gbm_cls_prob)) as.numeric(gbm_cls_prob[, "Yes"]) else as.numeric(gbm_cls_prob[, 2])
+gbm_cls_pred <- factor(ifelse(gbm_cls_prob_yes >= 0.5, "Yes", "No"), levels = c("No", "Yes"))
+
+metrics_cls_gbm <- class_metrics(test_heart$AHD, gbm_cls_pred)
+metrics_cls_gbm
+```
+
+We also fit an XGBoost model to compare directly with GBM.
+
+```{r cls-xgb}
+xgb_terms_cls <- terms(AHD ~ ., data = train_heart)
+x_train_xgb_cls <- model.matrix(xgb_terms_cls, data = train_heart)[, -1]
+x_test_xgb_cls <- model.matrix(xgb_terms_cls, data = test_heart)[, -1]
+y_train_xgb_cls <- as.numeric(train_heart$AHD == "Yes")
+
+set.seed(my_seed + 10)
+xgb_dtrain_cls <- xgb.DMatrix(data = x_train_xgb_cls, label = y_train_xgb_cls)
+xgb_dtest_cls <- xgb.DMatrix(data = x_test_xgb_cls)
+
+xgb_cls <- xgb.train(
+  params = list(
+    objective = "binary:logistic",
+    eval_metric = "auc",
+    eta = 0.05,
+    max_depth = 3,
+    subsample = 0.8,
+    colsample_bytree = 0.8,
+    min_child_weight = 1,
+    gamma = 0
+  ),
+  data = xgb_dtrain_cls,
+  nrounds = 250,
+  verbose = 0
+)
+
+xgb_cls_prob_yes <- as.numeric(predict(xgb_cls, newdata = xgb_dtest_cls))
+xgb_cls_pred <- factor(ifelse(xgb_cls_prob_yes >= 0.5, "Yes", "No"), levels = c("No", "Yes"))
+
+metrics_cls_xgb <- class_metrics(test_heart$AHD, xgb_cls_pred)
+metrics_cls_xgb
+```
+
+We collect the classification metrics in a single comparison table.
+
+```{r cls-comparison}
+classification_results <- bind_rows(
+  metrics_cls_tree %>% mutate(Method = "Tree (Pruned)"),
+  metrics_cls_bag %>% mutate(Method = "Bagging"),
+  metrics_cls_rf %>% mutate(Method = "Random Forest"),
+  metrics_cls_gbm %>% mutate(Method = "GBM"),
+  metrics_cls_xgb %>% mutate(Method = "XGBoost")
+) %>%
+  select(Method, Accuracy, Sensitivity, Specificity, everything())
+
+knitr::kable(classification_results, digits = 3, caption = "Classification results on Heart test set")
+```
+
+# Regression Case Study (Boston Housing)
+
+This section applies the same regression toolbox to a larger benchmark dataset (`Boston`, 506 rows) to see how methods scale beyond the previous examples.
+
+We start by loading the dataset and creating a train/test split.
+
+```{r boston-data}
+boston_data <- MASS::Boston %>%
+  mutate(chas = factor(chas))
+
+summary(boston_data)
+
+```
+
+
+```{r boston-data-split}
+
+set.seed(my_seed + 200)
+boston_train_idx <- createDataPartition(boston_data$medv, p = 0.75, list = FALSE)
+train_boston <- boston_data[boston_train_idx, ]
+test_boston <- boston_data[-boston_train_idx, ]
+
+cat("Boston rows:", nrow(boston_data), "\n")
+cat("Boston train rows:", nrow(train_boston), "\n")
+cat("Boston test rows:", nrow(test_boston), "\n")
+
+```
+
+
+We fit a single regression tree and prune it.
+
+```{r boston-tree-pruning}
+boston_tree_full <- tree(
+  medv ~ ., data = train_boston,
+  control = tree.control(nobs = nrow(train_boston), minsize = 5, mindev = 0)
+)
+
+set.seed(my_seed + 201)
+cv_boston <- cv.tree(boston_tree_full)
+best_size_boston <- cv_boston$size[which.min(cv_boston$dev)]
+boston_tree_pruned <- prune.tree(boston_tree_full, best = best_size_boston)
+
+boston_tree_pred <- predict(boston_tree_pruned, newdata = test_boston)
+metrics_boston_tree <- reg_metrics(test_boston$medv, boston_tree_pred)
+metrics_boston_tree
+```
+
+We then fit bagging (random forest with `mtry = p`).
+
+```{r boston-bagging}
+p_boston <- ncol(train_boston) - 1
+
+set.seed(my_seed + 202)
+bag_boston <- randomForest(
+  medv ~ ., data = train_boston,
+  mtry = p_boston,
+  ntree = ntree_main,
+  importance = TRUE
+)
+
+bag_boston_pred <- predict(bag_boston, newdata = test_boston)
+metrics_boston_bag <- reg_metrics(test_boston$medv, bag_boston_pred)
+metrics_boston_bag
+```
+
+We tune `mtry` with OOB MSE and fit a random forest.
+
+```{r boston-rf}
+base_mtry_boston <- max(1, floor(p_boston / 3))
+mtry_grid_boston <- sort(unique(pmax(1, pmin(p_boston, c(base_mtry_boston - 1, base_mtry_boston, base_mtry_boston + 1, p_boston)))))
+
+rf_boston_tuning <- map_dfr(mtry_grid_boston, function(m) {
+  set.seed(my_seed + 220 + m)
+  fit <- randomForest(medv ~ ., data = train_boston, mtry = m, ntree = ntree_fast)
+
+  tibble(
+    mtry = m,
+    OOB_MSE = fit$mse[ntree_fast]
+  )
+})
+
+best_mtry_boston <- rf_boston_tuning$mtry[which.min(rf_boston_tuning$OOB_MSE)]
+
+set.seed(my_seed + 203)
+rf_boston <- randomForest(
+  medv ~ ., data = train_boston,
+  mtry = best_mtry_boston,
+  ntree = ntree_main,
+  importance = TRUE
+)
+
+rf_boston_pred <- predict(rf_boston, newdata = test_boston)
+metrics_boston_rf <- reg_metrics(test_boston$medv, rf_boston_pred)
+metrics_boston_rf
+```
+
+We fit a compact GBM grid.
+
+```{r boston-gbm}
+boston_ctrl <- trainControl(method = "cv", number = cv_folds)
+
+boston_grid <- expand.grid(
+  interaction.depth = c(1, 2, 3),
+  n.trees = c(100, 250),
+  shrinkage = c(0.05, 0.1),
+  n.minobsinnode = c(10)
+)
+
+set.seed(my_seed + 204)
+gbm_boston <- train(
+  medv ~ ., data = train_boston,
+  method = "gbm",
+  trControl = boston_ctrl,
+  tuneGrid = boston_grid,
+  metric = "RMSE",
+  verbose = FALSE
+)
+
+gbm_boston_pred <- predict(gbm_boston, newdata = test_boston)
+metrics_boston_gbm <- reg_metrics(test_boston$medv, gbm_boston_pred)
+metrics_boston_gbm
+```
+
+We also fit XGBoost for Boston to compare with GBM on the same split.
+
+```{r boston-xgb}
+xgb_terms_boston <- terms(medv ~ ., data = train_boston)
+x_train_xgb_boston <- model.matrix(xgb_terms_boston, data = train_boston)[, -1]
+x_test_xgb_boston <- model.matrix(xgb_terms_boston, data = test_boston)[, -1]
+y_train_xgb_boston <- train_boston$medv
+
+set.seed(my_seed + 210)
+xgb_boston <- xgboost(
+  data = x_train_xgb_boston,
+  label = y_train_xgb_boston,
+  objective = "reg:squarederror",
+  eval_metric = "rmse",
+  nrounds = 300,
+  eta = 0.05,
+  max_depth = 3,
+  subsample = 0.8,
+  colsample_bytree = 0.8,
+  min_child_weight = 1,
+  gamma = 0,
+  verbose = 0
+)
+
+xgb_boston_pred <- as.numeric(predict(xgb_boston, newdata = x_test_xgb_boston))
+metrics_boston_xgb <- reg_metrics(test_boston$medv, xgb_boston_pred)
+metrics_boston_xgb
+```
+
+We collect results in a comparison table and visualise RMSE.
+
+```{r boston-comparison}
+boston_results <- bind_rows(
+  metrics_boston_tree %>% mutate(Method = "Tree (Pruned)"),
+  metrics_boston_bag %>% mutate(Method = "Bagging"),
+  metrics_boston_rf %>% mutate(Method = "Random Forest"),
+  metrics_boston_gbm %>% mutate(Method = "GBM"),
+  metrics_boston_xgb %>% mutate(Method = "XGBoost")
+) %>%
+  select(Method, RMSE, MAE, R2, everything()) %>%
+  arrange(RMSE)
+
+knitr::kable(boston_results, digits = 3, caption = "Boston housing: regression method comparison on test set")
+```
+
+```{r boston-rmse-plot}
+ggplot(boston_results, aes(x = fct_reorder(Method, -RMSE), y = RMSE, fill = Method)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  labs(
+    title = "Boston housing: test RMSE by method",
+    x = "",
+    y = "RMSE"
+  ) +
+  theme_minimal()
+```
+
+---
+
+# Some R packages for tree-based models
+
+- **`tree`**: lightweight package for classification and regression trees with cross-validation pruning.
+- **`rpart`** + **`rpart.plot`**: more feature-rich alternative for decision trees with nicer visualisation.
+- **`randomForest`**: the classic implementation of bagging and random forests.
+- **`ranger`**: faster, parallelised random forest with the same interface as `randomForest`.
+- **`xgboost`** / **`lightgbm`**: gradient boosting specific methods
+- **`caret`** / **`tidymodels`**: unified interfaces that wrap all the above for cross-validation, hyperparameter tuning, and pipelines.

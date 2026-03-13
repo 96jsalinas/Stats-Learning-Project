@@ -1,0 +1,334 @@
+---
+title: "Topic 5: k-Nearest Neighbors (k-NN)"
+subtitle: "Distance-Based Classification and Model Selection"
+author: "MS in Statistics for Data Science"
+date: "UC3M, 2026"
+output:
+  html_document:
+    theme: cosmo
+    highlight: tango
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 10, fig.height = 6)
+```
+
+# Introduction
+
+In this notebook, we focus on **k-Nearest Neighbors (k-NN)**, a simple and powerful non-parametric classifier. We will study how distance metrics, scaling, and the choice of $k$ affect model behavior and performance.
+
+
+```{r libraries}
+# Core packages
+library(tidyverse)    # Data manipulation and visualization
+library(class)        # k-NN implementation
+library(caret)        # Model training and evaluation
+library(pROC)         # ROC curve analysis
+
+# Visualization
+library(ggplot2)
+library(patchwork)
+library(viridis)
+
+# Set seed for reproducibility
+set.seed(42)
+```
+
+---
+
+# k-Nearest Neighbors for Classification
+
+To practice with a classification example, we will use the iris dataset.
+
+```{r iris-data}
+# Load and explore the data
+data(iris)
+glimpse(iris)
+```
+
+```{r iris-visualization}
+# Pairwise scatter plots
+ggplot(iris, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(title = "Iris Dataset: Petal Dimensions",
+       x = "Petal Length (cm)", y = "Petal Width (cm)") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1")
+```
+
+```{r iris-split}
+# Create train/test split
+set.seed(123)
+train_idx <- createDataPartition(iris$Species, p = 0.7, list = FALSE)
+iris_train <- iris[train_idx, ]
+iris_test <- iris[-train_idx, ]
+
+cat("Training set:", nrow(iris_train), "samples\n")
+cat("Test set:", nrow(iris_test), "samples\n")
+```
+
+k-NN uses distances, so features with larger scales dominate the distance calculation. Therefore, we should scale the data as a first step. Remember to create the scale parameters using only the train data
+
+```{r scaling-importance}
+# Without scaling - distances dominated by large features
+cat("Range before scaling:\n")
+sapply(iris_train[, 1:4], range)
+
+# With scaling
+train_scaled <- scale(iris_train[, 1:4])
+test_scaled <- scale(iris_test[, 1:4],
+                     center = attr(train_scaled, "scaled:center"),
+                     scale = attr(train_scaled, "scaled:scale"))
+
+cat("\nRange after scaling:\n")
+sapply(as.data.frame(train_scaled), range)
+```
+
+## Using k-NN and decision boundaries
+
+Once we have our scaled data, we can use the `knn` function.
+
+```{r knn-basic}
+# k-NN with k = 3
+knn_pred_k3 <- knn(train = train_scaled,
+                   test = test_scaled,
+                   cl = iris_train$Species,
+                   k = 3)
+
+# Confusion matrix
+confusionMatrix(knn_pred_k3, iris_test$Species)
+```
+
+
+To visualize the decision boundaries, we can create a grid of points using just 2 features, and get which class would be predicted at each element of the grid. This allows us to plot the ``backgroudn color''.
+
+```{r knn-decision-boundary}
+# Create a grid for visualization (using 2 features)
+x_range <- seq(min(train_scaled[, "Petal.Length"]) - 0.5,
+               max(train_scaled[, "Petal.Length"]) + 0.5, length.out = 100)
+y_range <- seq(min(train_scaled[, "Petal.Width"]) - 0.5,
+               max(train_scaled[, "Petal.Width"]) + 0.5, length.out = 100)
+grid <- expand.grid(Petal.Length = x_range, Petal.Width = y_range)
+
+# Predictions on grid for different values of k
+grid$k1 <- knn(train = train_scaled[, c("Petal.Length", "Petal.Width")],
+               test = as.matrix(grid[, c("Petal.Length", "Petal.Width")]),
+               cl = iris_train$Species, k = 1)
+
+grid$k5 <- knn(train = train_scaled[, c("Petal.Length", "Petal.Width")],
+               test = as.matrix(grid[, c("Petal.Length", "Petal.Width")]),
+               cl = iris_train$Species, k = 5)
+
+grid$k15 <- knn(train = train_scaled[, c("Petal.Length", "Petal.Width")],
+                test = as.matrix(grid[, c("Petal.Length", "Petal.Width")]),
+                cl = iris_train$Species, k = 15)
+
+# Plot decision boundaries
+p_k1 <- ggplot() +
+  geom_tile(data = grid, aes(x = Petal.Length, y = Petal.Width, fill = k1), alpha = 0.3) +
+  geom_point(data = data.frame(train_scaled, Species = iris_train$Species),
+             aes(x = Petal.Length, y = Petal.Width, color = Species), size = 2) +
+  labs(title = "k = 1 (High Variance)") +
+  theme_minimal() + theme(legend.position = "none")
+
+p_k5 <- ggplot() +
+  geom_tile(data = grid, aes(x = Petal.Length, y = Petal.Width, fill = k5), alpha = 0.3) +
+  geom_point(data = data.frame(train_scaled, Species = iris_train$Species),
+             aes(x = Petal.Length, y = Petal.Width, color = Species), size = 2) +
+  labs(title = "k = 5 (Balanced)") +
+  theme_minimal() + theme(legend.position = "none")
+
+p_k15 <- ggplot() +
+  geom_tile(data = grid, aes(x = Petal.Length, y = Petal.Width, fill = k15), alpha = 0.3) +
+  geom_point(data = data.frame(train_scaled, Species = iris_train$Species),
+             aes(x = Petal.Length, y = Petal.Width, color = Species), size = 2) +
+  labs(title = "k = 15 (High Bias)") +
+  theme_minimal() + theme(legend.position = "bottom")
+
+(p_k1 | p_k5 | p_k15) +
+  plot_annotation(title = "k-NN Decision Boundaries: Effect of k",
+                  subtitle = "Small k = complex boundary (overfitting), Large k = smooth boundary (underfitting)")
+```
+
+## Selecting the Optimal k
+
+The choice of k controls the bias-variance tradeoff:
+- **Small k**: Low bias, high variance (complex, jagged boundaries)
+- **Large k**: High bias, low variance (smooth boundaries)
+
+```{r k-selection}
+# Evaluate different values of k
+k_values <- 1:30
+accuracy <- numeric(length(k_values))
+
+for (i in seq_along(k_values)) {
+  pred <- knn(train = train_scaled,
+              test = test_scaled,
+              cl = iris_train$Species,
+              k = k_values[i])
+  accuracy[i] <- mean(pred == iris_test$Species)
+}
+
+# Plot accuracy vs k
+k_results <- data.frame(k = k_values, Accuracy = accuracy)
+
+ggplot(k_results, aes(x = k, y = Accuracy)) +
+  geom_line(color = "steelblue", linewidth = 1) +
+  geom_point(color = "steelblue", size = 2) +
+  geom_vline(xintercept = k_values[which.max(accuracy)],
+             linetype = "dashed", color = "red") +
+  annotate("text", x = k_values[which.max(accuracy)] + 2, y = max(accuracy),
+           label = paste("Optimal k =", k_values[which.max(accuracy)]),
+           color = "red") +
+  labs(title = "k-NN: Selecting Optimal k",
+       subtitle = "Test accuracy for different values of k",
+       x = "Number of Neighbors (k)", y = "Accuracy") +
+  theme_minimal()
+
+cat("Optimal k:", k_values[which.max(accuracy)], "\n")
+cat("Best accuracy:", max(accuracy), "\n")
+```
+
+We could make the $k$ value comparison more reboust by using cross validation with each possible $k$ value. This can be controlled with the `tuneGrid` option when using `caret::train()`.
+
+```{r knn-caret}
+# Set up cross-validation
+ctrl <- trainControl(method = "cv", number = 10)
+
+# Train k-NN with automatic k selection
+knn_cv <- train(Species ~ .,
+                data = iris_train,
+                method = "knn",
+                trControl = ctrl,
+                preProcess = c("center", "scale"),
+                tuneGrid = data.frame(k = 1:20))
+
+# Results
+print(knn_cv)
+plot(knn_cv, main = "Cross-Validation Accuracy vs k")
+
+# Best model predictions
+knn_cv_pred <- predict(knn_cv, iris_test)
+confusionMatrix(knn_cv_pred, iris_test$Species)
+```
+
+---
+
+# k-Nearest Neighbors for Regression
+
+k-NN can also predict continuous outcomes by averaging the target values of the nearest neighbors. Lets do an example where we predict `mpg` with `mtcars`
+
+```{r knn-regression-data}
+data(mtcars)
+
+# Train/test split
+set.seed(456)
+train_idx_reg <- createDataPartition(mtcars$mpg, p = 0.75, list = FALSE)
+mtcars_train <- mtcars[train_idx_reg, ]
+mtcars_test <- mtcars[-train_idx_reg, ]
+
+cat("Training set:", nrow(mtcars_train), "cars\n")
+cat("Test set:", nrow(mtcars_test), "cars\n")
+```
+
+```{r knn-regression-fit}
+# Cross-validation setup for regression
+ctrl_reg <- trainControl(method = "repeatedcv", number = 5, repeats = 3)
+
+# k-NN regression model
+knn_reg <- train(
+  mpg ~ wt + hp + disp + cyl,
+  data = mtcars_train,
+  method = "knn",
+  trControl = ctrl_reg,
+  preProcess = c("center", "scale"), # Scaling directly when training
+  tuneGrid = data.frame(k = 1:15),
+  metric = "RMSE"
+)
+
+print(knn_reg)
+plot(knn_reg, main = "Cross-Validation RMSE vs k (Regression)")
+```
+
+We can get some regression metrics, and also plot the observed vs obtained results, which should fall in the red diagonal line if the fit was perfect.
+
+```{r knn-regression-evaluation}
+# Test set predictions
+knn_reg_pred <- predict(knn_reg, newdata = mtcars_test)
+
+# Regression metrics
+rmse_val <- RMSE(knn_reg_pred, mtcars_test$mpg)
+mae_val <- MAE(knn_reg_pred, mtcars_test$mpg)
+r2_val <- R2(knn_reg_pred, mtcars_test$mpg)
+
+cat("Best k:", knn_reg$bestTune$k, "\n")
+cat("Test RMSE:", round(rmse_val, 3), "\n")
+cat("Test MAE:", round(mae_val, 3), "\n")
+cat("Test R^2:", round(r2_val, 3), "\n")
+
+reg_results <- tibble(
+  observed = mtcars_test$mpg,
+  predicted = knn_reg_pred
+)
+
+ggplot(reg_results, aes(x = observed, y = predicted)) +
+  geom_point(size = 3, color = "steelblue", alpha = 0.8) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "k-NN Regression: Predicted vs Observed mpg",
+       x = "Observed mpg",
+       y = "Predicted mpg") +
+  theme_minimal()
+```
+
+If we want to visualize the **shape** of the KNN regression function (like a step curve), we can do it with a model fitted in 1D, using only one predictor, here `wt`.
+
+```{r knn-regression-shape}
+# 1D model for visualization: mpg as a function of wt only
+k_shape <- 3
+knn_reg_wt <- train(
+  mpg ~ wt,
+  data = mtcars_train,
+  method = "knn",
+  trControl = ctrl_reg,
+  preProcess = c("center", "scale"),
+  tuneGrid = data.frame(k = k_shape),
+  metric = "RMSE"
+)
+
+# Smooth grid over wt to draw the fitted function
+wt_grid <- tibble(
+  wt = seq(min(mtcars_train$wt), max(mtcars_train$wt), length.out = 300)
+)
+
+lm_wt <- lm(mpg ~ wt, data = mtcars_train)
+
+plot_data <- wt_grid %>%
+  mutate(
+    mpg_knn = predict(knn_reg_wt, newdata = wt_grid),
+    mpg_lm = predict(lm_wt, newdata = wt_grid)
+  )
+
+ggplot() +
+  geom_point(data = mtcars_train, aes(x = wt, y = mpg),
+             color = "firebrick", size = 2.2, alpha = 0.85) +
+  geom_step(data = plot_data, aes(x = wt, y = mpg_knn),
+            color = "royalblue", linewidth = 0.9) +
+  geom_line(data = plot_data, aes(x = wt, y = mpg_lm),
+            color = "black", linewidth = 1) +
+  labs(
+    title = "KNN Regression Shape for mpg vs wt",
+    subtitle = paste("Blue: k-NN step fit (k =", k_shape, ") | Black: linear fit"),
+    x = "wt (1000 lbs)",
+    y = "mpg"
+  ) +
+  theme_minimal()
+```
+

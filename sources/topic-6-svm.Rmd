@@ -1,0 +1,744 @@
+---
+title: "Topic 6: Support Vector Machines"
+subtitle: "Maximum Margin Classifiers and the Kernel Trick"
+author: "MS in Statistics for Data Science"
+date: "UC3M, 2026"
+output:
+  html_document:
+    theme: cosmo
+    highlight: tango
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 10, fig.height = 6)
+```
+
+# Introduction
+
+Support Vector Machines (SVMs) are powerful classifiers that find the optimal decision boundary by maximizing the margin between classes. Recall from the theory seen in the slides that we can explain how they are built with the following steps:
+
+1. **Maximal Margin Classifiers**: finding the widest separating hyperplane
+2. **Support Vector Classifiers**: Handling non-separable data with soft margins
+3. **Support Vector Machines**: Using kernels to handle non-linear boundaries
+
+We will see toy examples with simulated data for each of them. Afterwards, we will see a case study with airline delays and finally an example of multiclass SVM classification.
+
+```{r libraries}
+# Core packages
+library(tidyverse)    # Data manipulation and visualization
+library(e1071)        # SVM implementation
+library(caret)        # Model training and evaluation
+library(kernlab)      # Alternative SVM implementation
+library(pROC)         # ROC curves and AUC
+
+# Visualization
+library(ggplot2)
+library(patchwork)
+library(viridis)
+
+# Set seed for reproducibility
+set.seed(42)
+```
+
+---
+
+# Maximal Margin Classifier (Hard margin)
+
+This chunk simulates a simple 2D dataset where the two classes can be perfectly separated by a linear boundary.
+
+```{r separable-data}
+# Generate linearly separable data
+set.seed(42)
+n <- 100
+
+# Class 1: bottom-left cluster
+class1 <- data.frame(
+  x1 = rnorm(n/2, mean = -1, sd = 0.5),
+  x2 = rnorm(n/2, mean = -1, sd = 0.5),
+  class = "A"
+)
+
+# Class 2: top-right cluster
+class2 <- data.frame(
+  x1 = rnorm(n/2, mean = 1, sd = 0.5),
+  x2 = rnorm(n/2, mean = 1, sd = 0.5),
+  class = "B"
+)
+
+separable_data <- rbind(class1, class2)
+separable_data$class <- factor(separable_data$class)
+
+# Visualize
+ggplot(separable_data, aes(x = x1, y = x2, color = class)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(title = "Linearly Separable Data",
+       subtitle = "Many possible separating hyperplanes exist") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1") +
+  coord_fixed()
+```
+
+Now we fit a linear SVM to the simulated data and inspect which observations become support vectors.
+
+> Note that we are using the SVM function, but by choosing the linear kernel it is a support vector classifier, and by setting a "high" cost its equivalent to having a hard margin. Here the parameter cost models in an opposite way the C parameter from our slides, where C=0 was a hard constraint, here a high cost value also creates a hard margin (in our data case 10 is large enough)
+
+```{r linear-svm}
+# Fit SVM with linear kernel
+svm_linear <- svm(class ~ x1 + x2, data = separable_data,
+                  kernel = "linear",
+                  cost = 10,
+                  scale = FALSE)
+
+# Model summary
+summary(svm_linear)
+
+# Identify support vectors
+cat("\nNumber of support vectors:", length(svm_linear$index), "\n")
+cat("Support vector indices:", svm_linear$index, "\n")
+```
+
+Next we visualize the decision regions, separating hyperplane, margins, and support vectors.
+
+```{r linear-boundary}
+# Create a grid for plotting
+x1_range <- seq(min(separable_data$x1) - 0.5, max(separable_data$x1) + 0.5, length = 100)
+x2_range <- seq(min(separable_data$x2) - 0.5, max(separable_data$x2) + 0.5, length = 100)
+grid <- expand.grid(x1 = x1_range, x2 = x2_range)
+
+# Predict on grid
+grid$pred <- predict(svm_linear, grid)
+decision_vals <- attr(predict(svm_linear, grid, decision.values = TRUE), "decision.values")
+grid$decision <- as.numeric(decision_vals)
+
+# Plot
+ggplot() +
+  geom_tile(data = grid, aes(x = x1, y = x2, fill = pred), alpha = 0.3) +
+  geom_contour(data = grid, aes(x = x1, y = x2, z = decision),
+               breaks = c(-1, 1), color = "black", linewidth = 0.5, linetype = "dashed") +
+  geom_contour(data = grid, aes(x = x1, y = x2, z = decision),
+               breaks = 0, color = "black", linewidth = 1) +
+  geom_point(data = separable_data, aes(x = x1, y = x2, color = class), size = 3) +
+  geom_point(data = separable_data[svm_linear$index, ],
+             aes(x = x1, y = x2), shape = 1, size = 5, stroke = 2) +
+  labs(title = "Maximal Margin Classifier",
+       subtitle = "Support vectors circled - they define the margin",
+       caption = "Solid line: decision boundary | Dashed lines: margin boundaries") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1", name = "Region") +
+  scale_color_brewer(palette = "Set1", name = "Class") +
+  coord_fixed()
+```
+
+---
+
+# Support Vector Classifier (Soft Margin)
+
+In this example we will use a soft margin classifier in data that is almost separable.
+
+```{r nonseparable-data}
+# Separable data with a 4 "wrong" points
+set.seed(42)
+n_core <- 196
+
+# Core clusters
+class1_core <- data.frame(
+  x1 = rnorm(n_core/2, mean = -1.0, sd = 0.35),
+  x2 = rnorm(n_core/2, mean = -1.0, sd = 0.35),
+  class = "A"
+)
+
+class2_core <- data.frame(
+  x1 = rnorm(n_core/2, mean = 1.0, sd = 0.35),
+  x2 = rnorm(n_core/2, mean = 1.0, sd = 0.35),
+  class = "B"
+)
+
+# Two mislabeled points from class A inside the class B region
+class1_conflict <- data.frame(
+  x1 = c(0.85, 1.25),
+  x2 = c(0.95, 0.80),
+  class = "A"
+)
+
+# Two mislabeled points from class B inside the class A region
+class2_conflict <- data.frame(
+  x1 = c(-0.90, -1.20),
+  x2 = c(-0.95, -0.75),
+  class = "B"
+)
+
+overlap_data <- rbind(class1_core, class2_core, class1_conflict, class2_conflict)
+overlap_data$class <- factor(overlap_data$class)
+
+# Visualize
+ggplot(overlap_data, aes(x = x1, y = x2, color = class)) +
+  geom_point(size = 2, alpha = 0.75) +
+  labs(title = "Non-Separable Data",
+       subtitle = "Near-separable structure with only four conflicting points") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1") +
+  coord_fixed()
+```
+
+Here we compare different values of the cost parameter C and how they change the boundary complexity.
+The cost parameter controls the penalty for misclassification (remember that in our slides $C$ was the "busget", so goes in the opposite direction):
+
+- **Low cost**: Wide margin, more violations (potential underfitting)
+- **High cost**: Narrow margin, fewer violations (potential overfitting)
+
+```{r cost-comparison}
+# Fit SVMs with different C values
+svm_low_cost <- svm(class ~ x1 + x2, data = overlap_data, kernel = "linear", cost = 0.01, scale = FALSE)
+svm_high_cost <- svm(class ~ x1 + x2, data = overlap_data, kernel = "linear", cost = 10, scale = FALSE)
+
+# Margin width for linear SVM:
+get_margin_width <- function(model) {
+  w <- drop(t(model$coefs) %*% model$SV)
+  2 / sqrt(sum(w^2))
+}
+
+margin_low <- get_margin_width(svm_low_cost)
+margin_high <- get_margin_width(svm_high_cost)
+
+# Function to create decision boundary plot
+plot_svm <- function(model, data, title, show_margins = FALSE, margin_width = NULL) {
+  x1_range <- seq(min(data$x1) - 0.5, max(data$x1) + 0.5, length = 100)
+  x2_range <- seq(min(data$x2) - 0.5, max(data$x2) + 0.5, length = 100)
+  grid <- expand.grid(x1 = x1_range, x2 = x2_range)
+  grid$pred <- predict(model, grid)
+  decision_vals <- attr(predict(model, grid, decision.values = TRUE), "decision.values")
+  grid$decision <- as.numeric(decision_vals)
+
+  subtitle_txt <- paste("Support vectors:", length(model$index))
+  if (!is.null(margin_width)) {
+    subtitle_txt <- paste0(subtitle_txt, " | Margin width: ", round(margin_width, 2))
+  }
+
+  p <- ggplot() +
+    geom_tile(data = grid, aes(x = x1, y = x2, fill = pred), alpha = 0.3) +
+    geom_point(data = data, aes(x = x1, y = x2, color = class), size = 2) +
+    geom_point(data = data[model$index, ], aes(x = x1, y = x2),
+               shape = 1, size = 4, stroke = 1.5) +
+    labs(title = title, subtitle = subtitle_txt) +
+    theme_minimal(base_size = 12) +
+    scale_fill_brewer(palette = "Set1") +
+    scale_color_brewer(palette = "Set1") +
+    coord_fixed() +
+    theme(legend.position = "none")
+
+  if (show_margins) {
+    p <- p +
+      geom_contour(data = grid, aes(x = x1, y = x2, z = decision),
+                   breaks = c(-1, 1), color = "black", linewidth = 0.5, linetype = "dashed") +
+      geom_contour(data = grid, aes(x = x1, y = x2, z = decision),
+                   breaks = 0, color = "black", linewidth = 1)
+  }
+
+  p
+}
+
+# Compare
+cost_summary <- tibble(
+  Cost = c(0.01, 100),
+  SupportVectors = c(length(svm_low_cost$index), length(svm_high_cost$index)),
+  MarginWidth = round(c(margin_low, margin_high), 3)
+)
+cost_summary
+
+p1 <- plot_svm(svm_low_cost, overlap_data, "cost = 0.01 (Softer Margin)",
+               show_margins = TRUE, margin_width = margin_low)
+p2 <- plot_svm(svm_high_cost, overlap_data, "cost = 10 (Tighter Margin)",
+               show_margins = TRUE, margin_width = margin_high)
+
+(p1 | p2) + plot_annotation(title = "Effect of cost Parameter on Margin and Support Vectors")
+```
+
+---
+
+# Kernel SVM (Non-Linear Boundaries)
+
+Now we will see an example with non linear data:
+
+```{r nonlinear-data}
+# Generate circular data
+set.seed(42)
+n <- 400
+
+# Inner circle (Class A)
+theta1 <- runif(n/2, 0, 2*pi)
+r1 <- rnorm(n/2, mean = 1, sd = 0.3)
+inner <- data.frame(
+  x1 = r1 * cos(theta1),
+  x2 = r1 * sin(theta1),
+  class = "A"
+)
+
+# Outer ring (Class B)
+theta2 <- runif(n/2, 0, 2*pi)
+r2 <- rnorm(n/2, mean = 3, sd = 0.5)
+outer <- data.frame(
+  x1 = r2 * cos(theta2),
+  x2 = r2 * sin(theta2),
+  class = "B"
+)
+
+circle_data <- rbind(inner, outer)
+circle_data$class <- factor(circle_data$class)
+
+# Visualize
+ggplot(circle_data, aes(x = x1, y = x2, color = class)) +
+  geom_point(size = 2, alpha = 0.7) +
+  labs(title = "Non-Linearly Separable Data",
+       subtitle = "A linear boundary cannot separate these classes") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1") +
+  coord_fixed()
+```
+
+We first fit a linear SVM on the circular data to show the limitations of a linear decision boundary.
+
+```{r linear-fails}
+# Try linear SVM
+svm_linear_fail <- svm(class ~ x1 + x2, data = circle_data, kernel = "linear", cost = 1)
+
+# Plot
+plot_svm(svm_linear_fail, circle_data, "Linear SVM: Cannot Separate Circular Data")
+```
+
+Next we fit an SVM with an RBF kernel, which handles non-linear structure through the kernel trick.
+The RBF kernel maps data to a higher-dimensional space where it becomes linearly separable.
+
+$$K(x, x') = \exp\left(-\gamma \|x - x'\|^2\right)$$
+
+```{r rbf-kernel}
+# Fit SVM with RBF kernel
+svm_rbf <- svm(class ~ x1 + x2, data = circle_data,
+               kernel = "radial",
+               gamma = 0.5, # remember that you can tune the gamma parameters
+               cost = 1)
+
+# Create detailed decision boundary plot
+x1_range <- seq(min(circle_data$x1) - 0.5, max(circle_data$x1) + 0.5, length = 200)
+x2_range <- seq(min(circle_data$x2) - 0.5, max(circle_data$x2) + 0.5, length = 200)
+grid <- expand.grid(x1 = x1_range, x2 = x2_range)
+grid$pred <- predict(svm_rbf, grid)
+
+ggplot() +
+  geom_tile(data = grid, aes(x = x1, y = x2, fill = pred), alpha = 0.3) +
+  geom_point(data = circle_data, aes(x = x1, y = x2, color = class), size = 2, alpha = 0.7) +
+  geom_point(data = circle_data[svm_rbf$index, ], aes(x = x1, y = x2),
+             shape = 1, size = 4, stroke = 1) +
+  labs(title = "RBF Kernel SVM: Non-Linear Decision Boundary",
+       subtitle = paste("Support vectors:", length(svm_rbf$index)),
+       caption = "The kernel trick maps data to higher dimensions without explicit computation") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1", name = "Region") +
+  scale_color_brewer(palette = "Set1", name = "Class") +
+  coord_fixed()
+
+```
+
+We can test a higher gamma now. In the selected support vectors we can see how with this radial kernel we not only get points in the boundary but also the more isolated points that are also too far from the other class. However, in the kernel generated space this is indeed linear.
+
+```{r}
+# Fit SVM with RBF kernel now with higher gamma
+svm_rbf <- svm(class ~ x1 + x2, data = circle_data,
+               kernel = "radial",
+               gamma = 2,
+               cost = 1)
+
+# Create detailed decision boundary plot
+x1_range <- seq(min(circle_data$x1) - 0.5, max(circle_data$x1) + 0.5, length = 200)
+x2_range <- seq(min(circle_data$x2) - 0.5, max(circle_data$x2) + 0.5, length = 200)
+grid <- expand.grid(x1 = x1_range, x2 = x2_range)
+grid$pred <- predict(svm_rbf, grid)
+
+ggplot() +
+  geom_tile(data = grid, aes(x = x1, y = x2, fill = pred), alpha = 0.3) +
+  geom_point(data = circle_data, aes(x = x1, y = x2, color = class), size = 2, alpha = 0.7) +
+  geom_point(data = circle_data[svm_rbf$index, ], aes(x = x1, y = x2),
+             shape = 1, size = 4, stroke = 1) +
+  labs(title = "RBF Kernel SVM: Non-Linear Decision Boundary",
+       subtitle = paste("Support vectors:", length(svm_rbf$index)),
+       caption = "The kernel trick maps data to higher dimensions without explicit computation") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1", name = "Region") +
+  scale_color_brewer(palette = "Set1", name = "Class") +
+  coord_fixed()
+```
+
+
+
+We can test with the same non linear data a polynomial kernel
+
+$$K(x, x') = (1 + x^T x')^d$$
+
+```{r polynomial-kernel}
+# Fit polynomial SVM (degree 2)
+svm_poly <- svm(class ~ x1 + x2, data = circle_data,
+                kernel = "polynomial",
+                degree = 2,
+                coef0 = 1,
+                cost = 1)
+
+# Plot
+plot_svm(svm_poly, circle_data, "Polynomial Kernel (degree = 2)")
+```
+
+---
+
+# Hyperparameter Tuning
+
+We now run a grid search with cross-validation to tune cost and gamma.
+
+```{r grid-search}
+# Create training and test sets
+set.seed(123)
+train_idx <- sample(1:nrow(circle_data), 0.7 * nrow(circle_data))
+train_data <- circle_data[train_idx, ]
+test_data <- circle_data[-train_idx, ]
+
+# Grid search for optimal parameters
+tune_result <- tune(svm,
+                    class ~ x1 + x2,
+                    data = train_data,
+                    kernel = "radial",
+                    ranges = list(
+                      cost = c(0.1, 1, 10, 100),
+                      gamma = c(0.01, 0.1, 0.5, 1, 2)
+                    ))
+
+# Results
+summary(tune_result)
+
+# Best parameters
+cat("\nBest parameters:\n")
+print(tune_result$best.parameters)
+
+# Best model performance
+cat("\nBest cross-validation error:", tune_result$best.performance, "\n")
+```
+
+This chunk visualizes the cross-validation errors from tuning as a heatmap.
+
+```{r tune-visualization}
+# Extract performance data
+perf_data <- tune_result$performances
+
+# Heatmap of error rates
+ggplot(perf_data, aes(x = factor(gamma), y = factor(cost), fill = error)) +
+  geom_tile() +
+  geom_text(aes(label = round(error, 3)), color = "white", size = 3) +
+  scale_fill_viridis(option = "plasma", direction = -1) +
+  labs(title = "SVM Hyperparameter Tuning: Grid Search Results",
+       subtitle = "Cross-validation error for different C and gamma combinations",
+       x = "Gamma", y = "Cost", fill = "CV Error") +
+  theme_minimal()
+```
+
+Next we evaluate the best tuned model on the held-out test set.
+
+```{r best-model}
+# Get the best model
+best_svm <- tune_result$best.model
+
+# Predictions on test set
+svm_pred <- predict(best_svm, test_data)
+
+# Confusion matrix
+confusionMatrix(svm_pred, test_data$class)
+```
+
+---
+
+# Real Case Study - Airline Delay Classification
+
+In this section we move to a real operational dataset and predict whether a flight is delayed (`Delay`) or on time (`NoDelay`).
+
+The Airline Delay data includes route, schedule, traffic, historical behavior, and weather variables. We turn `TotalDelay` into a binary target and keep all previous features as candidate predictors.
+
+```{r airline-load}
+# Load raw data
+airline_raw <- read_csv("AirlineDelay.csv", show_col_types = FALSE)
+
+# Build binary target and clean feature types
+airline_data <- airline_raw %>%
+  mutate(
+    Delayed = factor(if_else(TotalDelay > 0, "Delay", "NoDelay"),
+                     levels = c("Delay", "NoDelay")),
+    across(c(Flight, Carrier, Month, DayOfWeek), as.factor),
+    across(c(InsufficientHistory, OriginFog, OriginThunder, DestFog, DestThunder), as.factor)
+  ) %>%
+  select(-TotalDelay)
+
+cat("Rows:", nrow(airline_data), " | Columns:", ncol(airline_data), "\n")
+```
+
+Before fitting models, we inspect class balance, missing data, and a few basic delay patterns.
+
+```{r airline-explore}
+class_balance <- airline_data %>%
+  count(Delayed) %>%
+  mutate(Share = scales::percent(n / sum(n)))
+
+class_balance
+
+missing_summary <- airline_data %>%
+  summarize(across(everything(), ~ sum(is.na(.)))) %>%
+  pivot_longer(cols = everything(), names_to = "Variable", values_to = "Missing") %>%
+  summarize(TotalMissing = sum(Missing), VariablesWithMissing = sum(Missing > 0))
+
+missing_summary
+```
+
+```{r airline-patterns}
+p_class <- airline_data %>%
+  count(Delayed) %>%
+  ggplot(aes(x = Delayed, y = n, fill = Delayed)) +
+  geom_col(width = 0.6, alpha = 0.85) +
+  labs(title = "Class Balance", x = "", y = "Number of Flights") +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+carrier_delay <- airline_raw %>%
+  mutate(Delayed = TotalDelay > 0) %>%
+  group_by(Carrier) %>%
+  summarize(DelayRate = mean(Delayed), Flights = n(), .groups = "drop") %>%
+  filter(Flights >= 200) %>%
+  arrange(desc(DelayRate))
+
+p_carrier <- ggplot(carrier_delay, aes(x = reorder(Carrier, DelayRate), y = DelayRate)) +
+  geom_col(fill = "#2C7FB8", alpha = 0.9) +
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(title = "Delay Rate by Carrier", x = "", y = "Delay Rate") +
+  theme_minimal()
+
+month_delay <- airline_raw %>%
+  mutate(
+    Delayed = TotalDelay > 0,
+    Month = factor(Month, levels = c("June", "July", "August"))
+  ) %>%
+  group_by(Month) %>%
+  summarize(DelayRate = mean(Delayed), .groups = "drop")
+
+p_month <- ggplot(month_delay, aes(x = Month, y = DelayRate, group = 1)) +
+  geom_line(color = "#D95F0E", linewidth = 1) +
+  geom_point(color = "#D95F0E", size = 3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(title = "Delay Rate by Month", x = "", y = "Delay Rate") +
+  theme_minimal()
+
+(p_class | p_carrier) / p_month
+```
+
+Now we create a stratified train/test split and preserve class proportions in both subsets.
+
+```{r airline-split}
+set.seed(123)
+air_split <- createDataPartition(airline_data$Delayed, p = 0.8, list = FALSE)
+
+air_train <- airline_data[air_split, ]
+air_test <- airline_data[-air_split, ]
+
+cat("Training size:", nrow(air_train), "\n")
+cat("Test size:", nrow(air_test), "\n")
+
+bind_rows(
+  air_train %>% count(Delayed) %>% mutate(Set = "Train"),
+  air_test %>% count(Delayed) %>% mutate(Set = "Test")
+) %>%
+  group_by(Set) %>%
+  mutate(Share = round(n / sum(n), 3)) %>%
+  ungroup()
+```
+
+We train logistic regression, LDA, and SVM under the same repeated cross-validation setup and ROC optimization criterion.
+
+```{r airline-train-models}
+ctrl_air <- trainControl(
+  method = "cv",
+  number = 3,
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary
+)
+
+set.seed(123)
+air_logit <- train(
+  Delayed ~ .,
+  data = air_train,
+  method = "glm",
+  family = binomial(),
+  trControl = ctrl_air,
+  metric = "ROC",
+  preProcess = c("center", "scale")
+)
+
+set.seed(123)
+air_lda <- train(
+  Delayed ~ .,
+  data = air_train,
+  method = "lda",
+  trControl = ctrl_air,
+  metric = "ROC",
+  preProcess = c("center", "scale")
+)
+
+set.seed(123)
+air_svm <- train(
+  Delayed ~ .,
+  data = air_train,
+  method = "svmRadial",
+  trControl = ctrl_air,
+  metric = "ROC",
+  preProcess = c("center", "scale"),
+  tuneLength = 6
+)
+
+air_logit
+air_lda
+air_svm
+```
+
+This chunk evaluates test-set performance with accuracy, sensitivity, specificity, and AUC for each model.
+
+```{r airline-evaluate}
+evaluate_binary_model <- function(model, test_data, model_name) {
+  pred <- predict(model, test_data)
+  prob_delay <- predict(model, test_data, type = "prob")[, "Delay"]
+  cm <- confusionMatrix(pred, test_data$Delayed, positive = "Delay")
+  roc_obj <- roc(
+    response = test_data$Delayed,
+    predictor = prob_delay,
+    levels = c("NoDelay", "Delay"),
+    quiet = TRUE
+  )
+
+  tibble(
+    Model = model_name,
+    Accuracy = as.numeric(cm$overall["Accuracy"]),
+    Sensitivity = as.numeric(cm$byClass["Sensitivity"]),
+    Specificity = as.numeric(cm$byClass["Specificity"]),
+    AUC = as.numeric(auc(roc_obj))
+  )
+}
+
+air_results <- bind_rows(
+  evaluate_binary_model(air_logit, air_test, "Logistic Regression"),
+  evaluate_binary_model(air_lda, air_test, "LDA"),
+  evaluate_binary_model(air_svm, air_test, "SVM (Radial)")
+) %>%
+  arrange(desc(AUC))
+
+air_results
+```
+
+```{r airline-model-comparison-plot}
+air_results_long <- air_results %>%
+  pivot_longer(cols = c(Accuracy, Sensitivity, Specificity, AUC),
+               names_to = "Metric", values_to = "Value")
+
+ggplot(air_results_long, aes(x = Model, y = Value, fill = Metric)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
+  labs(title = "Airline Delay Test Performance: Logistic vs LDA vs SVM",
+       subtitle = "Binary classification (Delay vs NoDelay)",
+       x = "", y = "Score") +
+  scale_fill_viridis_d(option = "E") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 18, hjust = 1))
+```
+
+We also compare ROC curves to visualize threshold trade-offs and ranking quality across models.
+
+```{r airline-roc}
+prob_logit <- predict(air_logit, air_test, type = "prob")[, "Delay"]
+prob_lda <- predict(air_lda, air_test, type = "prob")[, "Delay"]
+prob_svm <- predict(air_svm, air_test, type = "prob")[, "Delay"]
+
+roc_logit <- roc(air_test$Delayed, prob_logit, levels = c("NoDelay", "Delay"), quiet = TRUE)
+roc_lda <- roc(air_test$Delayed, prob_lda, levels = c("NoDelay", "Delay"), quiet = TRUE)
+roc_svm <- roc(air_test$Delayed, prob_svm, levels = c("NoDelay", "Delay"), quiet = TRUE)
+
+plot(roc_logit, col = "#1F77B4", lwd = 2, main = "ROC Curves on Airline Delay Test Set")
+lines(roc_lda, col = "#2CA02C", lwd = 2)
+lines(roc_svm, col = "#D62728", lwd = 2)
+abline(a = 0, b = 1, lty = 2, col = "gray50")
+
+legend(
+  "bottomright",
+  legend = c(
+    paste0("Logistic (AUC = ", round(auc(roc_logit), 3), ")"),
+    paste0("LDA (AUC = ", round(auc(roc_lda), 3), ")"),
+    paste0("SVM radial (AUC = ", round(auc(roc_svm), 3), ")")
+  ),
+  col = c("#1F77B4", "#2CA02C", "#D62728"),
+  lwd = 2,
+  bty = "n"
+)
+```
+
+---
+
+# Multi-Class SVM
+
+SVM is inherently a binary classifier, but can be extended to multi-class problems using:
+
+- **One-vs-One**: Train k(k-1)/2 classifiers for k classes
+- **One-vs-All**: Train k classifiers, each separating one class from all others
+
+```{r multiclass}
+# Use iris data (3 classes)
+data(iris)
+
+# Split
+set.seed(123)
+iris_idx <- createDataPartition(iris$Species, p = 0.7, list = FALSE)
+iris_train <- iris[iris_idx, ]
+iris_test <- iris[-iris_idx, ]
+
+# Train multi-class SVM
+svm_multi <- svm(Species ~ ., data = iris_train, kernel = "radial")
+
+# The e1071 package uses OvO by default
+summary(svm_multi)
+
+# Predictions
+multi_pred <- predict(svm_multi, iris_test)
+
+# Confusion matrix
+confusionMatrix(multi_pred, iris_test$Species)
+```
+
+Finally, we project the iris problem onto two features and visualize the learned multi-class regions.
+
+```{r multiclass-viz}
+# Use only 2 features for visualization
+svm_2d <- svm(Species ~ Petal.Length + Petal.Width, data = iris_train, kernel = "radial")
+
+# Create grid
+pl_range <- seq(min(iris$Petal.Length) - 0.5, max(iris$Petal.Length) + 0.5, length = 100)
+pw_range <- seq(min(iris$Petal.Width) - 0.5, max(iris$Petal.Width) + 0.5, length = 100)
+grid_iris <- expand.grid(Petal.Length = pl_range, Petal.Width = pw_range)
+grid_iris$pred <- predict(svm_2d, grid_iris)
+
+# Plot
+ggplot() +
+  geom_tile(data = grid_iris, aes(x = Petal.Length, y = Petal.Width, fill = pred), alpha = 0.3) +
+  geom_point(data = iris_train, aes(x = Petal.Length, y = Petal.Width, color = Species),
+             size = 3, alpha = 0.7) +
+  labs(title = "Multi-Class SVM Decision Boundaries (Iris Data)",
+       x = "Petal Length", y = "Petal Width") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1", name = "Predicted") +
+  scale_color_brewer(palette = "Set1", name = "Actual")
+```
+
