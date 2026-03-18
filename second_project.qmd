@@ -298,7 +298,7 @@ plt.show()
 ### Interpretation
 
 * The linear SVM achieves **80.4 % accuracy** and a **ROC-AUC of 0.7394**, nearly identical to Part 1's LDA (0.7401). This is expected: both methods produce a linear boundary, and LDA's discriminant function is close to the SVM's hyperplane when the class-conditional distributions are roughly Gaussian.
-* Recall on the default class is only **24.5 %** at the standard threshold, meaning three in four defaulters are missed — the same majority-class bias observed with LDA in Part 1.
+* Recall on the default class is only **24.5 %** at the standard threshold, meaning three in four defaulters are missed, the same majority-class bias observed with LDA in Part 1.
 * Lowering the threshold to 0.20 raises recall to **65.0 %** and cuts expected cost from **0.8642 to 0.6062**, confirming that even a linear model benefits substantially from cost-aware thresholding.
 * These results set a clean linear baseline; the next step is to test whether the RBF kernel can capture non-linear interactions that improve discrimination.
 
@@ -415,8 +415,8 @@ plt.show()
 
 * The grid search selects **C = 10, γ = 0.001** with a subsample CV AUC of 0.7390. On the full test set the RBF SVM achieves **ROC-AUC = 0.7082**, which is notably **lower** than the linear SVM (0.7394). This suggests that non-linear structure in this dataset is limited: the RBF kernel introduces flexibility that the model cannot exploit productively, and the high-dimensional feature space (24 features) may cause the kernel mapping to produce a noisier boundary.
 * Accuracy at the default threshold (80.9 %) and recall on the default class (28.5 %) are marginally better than the linear SVM's, but the drop in AUC means the model's overall ranking quality is worse.
-* Applying the cost-optimal threshold 0.20 improves recall to **43.8 %** but expected cost only decreases to **0.6943** — considerably worse than the linear SVM at the same threshold (0.6062). The calibrated probabilities from the RBF SVM are less well-separated, making threshold tuning less effective.
-* The heatmap reveals that CV AUC is relatively flat across the grid, with large γ values (γ ≥ 0.1) performing worst — consistent with over-localised decision boundaries that overfit to the training subsample.
+* Applying the cost-optimal threshold 0.20 improves recall to **43.8 %** but expected cost only decreases to **0.6943**, considerably worse than the linear SVM at the same threshold (0.6062). The calibrated probabilities from the RBF SVM are less well-separated, making threshold tuning less effective.
+* The heatmap shows similar CV AUC for γ=0.001–0.01, while γ=0.1 performs worst, consistent with overly local RBF decision boundaries that tend to overfit (especially at larger C).
 
 ---
 
@@ -468,11 +468,11 @@ plt.show()
 
 ### Interpretation
 
-* Encoding the 5:1 cost ratio directly via `class_weight={0:1, 1:5}` is the most effective SVM strategy. It raises recall on defaulters to **71.7 %** — roughly 2.5 times the standard RBF SVM's 28.5 % — and achieves the **lowest expected cost among all SVM variants (0.5736)**.
-* The trade-off is a significant drop in accuracy (from 81 % to **67.7 %**) and precision on the default class (from 66 % to **37.9 %**). This is the classic cost-sensitive effect: the model now predicts default more aggressively, correctly catching more true defaulters but also flagging more false positives.
-* Interestingly, the class-weighted SVM also produces the **highest ROC-AUC (0.7576)** of all three SVM variants. The class weighting changes the objective during SVM training, not just the threshold — the support vectors are selected differently, leading to a genuinely better ranking model.
+* Encoding the 5:1 cost ratio directly via `class_weight={0:1, 1:5}` is the most effective SVM strategy. It raises recall on defaulters to **72 %**, which is roughly 2.5 times the standard RBF SVM's 28.5 % and achieves the **lowest expected cost among all SVM variants (0.5736)**.
+* The trade-off is a significant drop in accuracy (from 81 % to **68 %**) and precision on the default class (from 66 % to **38 %**). This is the classic cost-sensitive effect: the model now predicts default more aggressively, correctly catching more true defaulters but also flagging more false positives.
+* Interestingly, the class-weighted SVM also produces the **highest ROC-AUC (0.7576)** of all three SVM variants. The class weighting changes the objective during SVM training, not just the threshold, the support vectors are selected differently, leading to a genuinely better ranking model.
 * Comparing the confusion matrices side-by-side: at t = 0.50, the default RBF SVM predicts "default" for very few cases (high precision, low recall), while the class-weighted variant flips this trade-off. The cost-threshold variant at t = 0.20 falls between the two.
-* The expected costs at t = 0.50 and t = 0.20 for the class-weighted SVM are nearly identical (**0.5736 vs 0.5766**), suggesting that the learned boundary already internalises the cost asymmetry — additional threshold adjustment provides no further benefit.
+* The expected costs at t = 0.50 and t = 0.20 for the class-weighted SVM are nearly identical (**0.5736 vs 0.5766**), suggesting that the learned boundary already internalises the cost asymmetry, additional threshold adjustment provides no further benefit.
 
 ---
 
@@ -507,7 +507,7 @@ display(svm_summary)
 
 ### Interpretation
 
-* The summary table confirms that the **cost-sensitive RBF SVM at t = 0.50** delivers the best expected cost (**0.5736**) among all SVM configurations — and improves over Part 1's best result (LDA at t = 0.20, expected cost 0.599).
+* The summary table confirms that the **cost-sensitive RBF SVM at t = 0.50** delivers the best expected cost (**0.5736**) among all SVM configurations and improves over Part 1's best result (LDA at t = 0.20, expected cost 0.599).
 * The linear SVM and the LDA from Part 1 are nearly interchangeable in ROC-AUC (0.7394 vs 0.7401), reinforcing that the discriminative signal in this dataset is largely linear.
 * The unweighted RBF SVM performs worst overall (ROC-AUC = 0.7082), indicating that a naïve kernel mapping with default-threshold evaluation does not help on this tabular dataset. The feature space is already standardised and moderately high-dimensional; the kernel trick adds capacity the data cannot support.
 * A key practical insight: for SVMs on this problem, **class weighting is more effective than threshold tuning**. The class-weighted model achieves similar expected cost at both thresholds (0.5736 vs 0.5766), meaning the learner has already absorbed the cost asymmetry during training.
@@ -520,7 +520,7 @@ display(svm_summary)
 
 ### Theory
 
-A classification tree partitions the feature space into rectangular regions by recursively applying binary splits that minimise node impurity (Gini index). The full (unpruned) tree grows until every leaf is pure or contains fewer than `min_samples_split` observations — this typically produces a very deep, overfit tree. **Cost-complexity pruning** addresses this by adding a regularisation penalty $\alpha \cdot |T|$ (number of leaves) to the training impurity: as $\alpha$ increases, leaves are progressively collapsed back toward the root. Cross-validation over a grid of $\alpha$ values identifies the level of pruning that maximises generalisation.
+A classification tree partitions the feature space into rectangular regions by recursively applying binary splits that minimise node impurity (Gini index). The full (unpruned) tree grows until every leaf is pure or contains fewer than `min_samples_split` observations, this typically produces a very deep, overfit tree. **Cost-complexity pruning** addresses this by adding a regularisation penalty $\alpha \cdot |T|$ (number of leaves) to the training impurity: as $\alpha$ increases, leaves are progressively collapsed back toward the root. Cross-validation over a grid of $\alpha$ values identifies the level of pruning that maximises generalisation.
 
 ### Fit & Prune
 
@@ -641,10 +641,10 @@ plt.show()
 
 ### Interpretation
 
-* The pruning path contains **1 312 candidate α values**; cross-validation selects **α = 0.000177**, producing a tree with **14 levels** and **83 leaves**. This is substantially pruned from the full tree but still large enough to capture complex interactions. The apparent gap on the right side of the pruning curve is an artifact of the sampling strategy: the 30 evaluation points are drawn at evenly-spaced *indices* along the path, but the α values themselves are not uniformly distributed — most are densely clustered near zero (each corresponding to removing a single leaf) and a few at the far end represent collapsing large subtrees in one step. The region of interest around the optimum is therefore sampled densely, while the high-α tail is sampled coarsely.
-* The pruned tree achieves a **ROC-AUC of 0.7568**, already competitive with the SVMs. At the standard threshold, recall on defaulters is **34.3 %** (F1 = 0.45), and at the cost-optimal threshold 0.20, recall rises to **65.5 %** with expected cost dropping to **0.5981**.
+* The pruning path contains **1 312 candidate α values**; cross-validation selects **α = 0.000177**, producing a tree with **14 levels** and **83 leaves**. This is substantially pruned from the full tree but still large enough to capture complex interactions. The apparent gap on the right side of the pruning curve is an artifact of the sampling strategy: the 30 evaluation points are drawn at evenly-spaced *indices* along the path, but the α values themselves are not uniformly distributed, most are densely clustered near zero (each corresponding to removing a single leaf) and a few at the far end represent collapsing large subtrees in one step. The region of interest around the optimum is therefore sampled densely, while the high-α tail is sampled coarsely.
+* The pruned tree achieves a **ROC-AUC of 0.7568**, already competitive with the SVMs. At the standard threshold, recall on defaulters is **34 %** (F1 = 0.45), and at the cost-optimal threshold 0.20, recall rises to **65.5 %** with expected cost dropping to **0.5981**.
 * The tree diagram reveals that the first split is on a repayment-status feature, consistent with the variable importance patterns observed in Part 1's EDA. The top 3 levels use status and bill amount variables almost exclusively.
-* A single tree is inherently interpretable — one can trace any prediction through the decision path — but its **high variance** (sensitivity to the specific training sample) is the main limitation. The next sections address this with ensemble methods.
+* A single tree is inherently interpretable, one can trace any prediction through the decision path, but its **high variance** (sensitivity to the specific training sample) is the main limitation. The next sections address this with ensemble methods.
 
 ---
 
@@ -703,7 +703,7 @@ plt.show()
 
 ### Interpretation
 
-* Bagging with 150 trees achieves an **OOB accuracy of 81.4 %** and a test **ROC-AUC of 0.7544**. Recall on defaulters at the standard threshold is **37.6 %** — a modest improvement over the single pruned tree (34.3 %), reflecting the variance reduction from bootstrap aggregation.
+* Bagging with 150 trees achieves an **OOB accuracy of 81.4 %** and a test **ROC-AUC of 0.7544**. Recall on defaulters at the standard threshold is **38 %**, a modest improvement over the single pruned tree (34 %), reflecting the variance reduction from bootstrap aggregation.
 * At the cost-optimal threshold 0.20, recall rises to **70.8 %** with expected cost **0.5926**, which already improves on Part 1's best result (LDA at t = 0.20, expected cost 0.599).
 * Recall and expected cost improve over the single tree at both thresholds, but **ROC-AUC drops slightly (0.7544 vs 0.7568)**. This is because all bagging trees use the full feature set at each split, so the dominant features (repayment status variables) appear at the top of nearly every tree. The resulting high inter-tree correlation limits the variance reduction, and the ensemble's ranking quality does not improve on that of the single pruned tree.
 
@@ -713,7 +713,7 @@ plt.show()
 
 ### Theory
 
-A Random Forest decorrelates the Bagging ensemble by restricting each split to a random subset of $m = \texttt{max\_features}$ candidate predictors. Because trees no longer always pick the same dominant features at the top splits, they become more diverse and their average predictions are less correlated — reducing variance further than Bagging. The canonical default for classification is $m = \lfloor\sqrt{p}\rfloor$. We tune $m$ via OOB error to check whether a different value works better on this dataset.
+A Random Forest decorrelates the Bagging ensemble by restricting each split to a random subset of $m = \texttt{max\_features}$ candidate predictors. Because trees no longer always pick the same dominant features at the top splits, they become more diverse and their average predictions are less correlated, reducing variance further than Bagging. The canonical default for classification is $m = \lfloor\sqrt{p}\rfloor$. We tune $m$ via OOB error to check whether a different value works better on this dataset.
 
 ### Tuning max_features
 
@@ -899,9 +899,9 @@ plt.show()
 
 ### Interpretation
 
-* GridSearchCV selects **learning_rate = 0.05, max_depth = 3, n_estimators = 200, subsample = 0.8** with a CV AUC of **0.7815** — the highest AUC achieved by any model so far.
+* GridSearchCV selects **learning_rate = 0.05, max_depth = 3, n_estimators = 200, subsample = 0.8** with a CV AUC of **0.7815**, the highest AUC achieved by any model so far.
 * On the test set, GBM achieves **ROC-AUC = 0.7809**, an improvement of **+0.0210** over Random Forest (0.7599) and **+0.0408** over LDA (0.7401). This confirms that the sequential, residual-fitting nature of boosting extracts additional discriminative signal that bagging-based methods miss.
-* At the cost-optimal threshold 0.20, recall reaches **66.1 %** with the **lowest expected cost of any tree-based method (0.5604)** — a reduction of 0.039 expected cost units compared to Part 1's LDA benchmark (0.599).
+* At the cost-optimal threshold 0.20, recall reaches **66.1 %** with the **lowest expected cost of any tree-based method (0.5604)**, a reduction of 0.039 expected cost units compared to Part 1's LDA benchmark (0.599).
 * The selected configuration uses shallow trees (max_depth = 3) and a low learning rate (0.05), consistent with the standard boosting recipe: many weak learners combined cautiously. Stochastic boosting (subsample = 0.8) adds variance reduction similar to bagging.
 
 ---
@@ -995,8 +995,8 @@ plt.show()
 ### Interpretation
 
 * XGBoost selects **183 boosting rounds** via early stopping (from a maximum of 400), confirming that the built-in regularisation and monitoring prevent overfitting effectively.
-* Test performance is virtually identical to GBM: **ROC-AUC = 0.7809**, accuracy = 81.8 %, recall at t = 0.50 = 35.5 %. At the cost-optimal threshold, expected cost is **0.5622**, within 0.002 of GBM's 0.5604.
-* The learning curve shows training AUC climbing steadily while test AUC plateaus after approximately 100 rounds, with the gap widening slightly — classic mild overfitting behaviour controlled by early stopping.
+* Test performance is virtually identical to GBM: **ROC-AUC = 0.7809**, accuracy = 82 %, recall at t = 0.50 = 36 %. At the cost-optimal threshold, expected cost is **0.5622**, within 0.002 of GBM's 0.5604.
+* The learning curve shows training AUC climbing steadily while test AUC plateaus after approximately 100 rounds, with the gap widening slightly, classic mild overfitting behaviour controlled by early stopping.
 * The near-parity with GBM is expected: both use the same depth (3), a similar learning rate (0.05), and stochastic row sampling (0.8). XGBoost's column subsampling (0.8) and $L_2$ regularisation provide a minor additional hedge against overfitting but do not materially change the outcome on this moderately-sized dataset.
 
 ---
